@@ -37,7 +37,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full bg-background/85 backdrop-blur-xl border-b border-border/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-8">
-        <div className="flex items-center justify-between py-4 md:py-5">
+        <div className="flex items-center justify-between py-2 md:py-2">
           <button
             onClick={() => setOpen(!open)}
             className="lg:hidden p-2 -ml-2"
@@ -47,7 +47,7 @@ export function Header() {
           </button>
 
           <Link to="/" className="flex-1 lg:flex-none flex justify-center lg:justify-start">
-            <img src={logo} alt="Prata Z Joias" className="h-20 md:h-28 w-auto object-contain" />
+            <img src={logo} alt="Prata Z Joias" className="h-14 md:h-20 w-auto object-contain" />
           </Link>
 
           <div className="flex items-center gap-1 md:gap-3">
