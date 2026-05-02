@@ -1,37 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ProductCard } from "@/components/ProductCard";
 import { getBestSellers } from "@/data/products";
-import catColar from "@/assets/cat-colar.jpg";
-import catBrinco from "@/assets/cat-brinco.jpg";
-import catAnel from "@/assets/cat-anel.jpg";
-import catPulseira from "@/assets/cat-pulseira.jpg";
-
-const editorialBoxes = [
-  {
-    title: "Colares",
-    subtitle: "Camadas que contam histórias",
-    image: catColar,
-    slug: "colares",
-  },
-  {
-    title: "Brincos",
-    subtitle: "Do clássico ao statement",
-    image: catBrinco,
-    slug: "brincos",
-  },
-  {
-    title: "Anéis",
-    subtitle: "Solitários e delicadezas",
-    image: catAnel,
-    slug: "aneis",
-  },
-  {
-    title: "Pulseiras",
-    subtitle: "Brilho que acompanha o gesto",
-    image: catPulseira,
-    slug: "pulseiras",
-  },
-] as const;
 
 export function MostLoved() {
   const products = getBestSellers();
