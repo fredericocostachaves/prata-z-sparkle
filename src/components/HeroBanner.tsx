@@ -5,7 +5,7 @@ const slides = [
   {
     eyebrow: "Pagamento facilitado",
     title: "Parcele em até 4x sem juros",
-    subtitle: "Suas joias preferidas cabem no seu sonho — e no seu orçamento.",
+    subtitle: "Seu porta joias renovado com a melhor forma de pagamento.",
     cta: "Comprar agora",
     href: "#categorias",
   },

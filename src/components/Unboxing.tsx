@@ -18,9 +18,9 @@ export function Unboxing() {
             Abrir uma caixa Prata Z é <em className="font-serif italic">um presente em si</em>
           </h2>
           <p className="mt-6 text-muted-foreground leading-relaxed">
-            Embalagem rosa nude assinada, lenço de cetim, cartão com mensagem positiva e
-            uma flanela exclusiva para preservar o brilho da sua joia. Cada detalhe foi
-            pensado para encantar quem recebe.
+            Nossas embalagens representam a feminilidade das nossas clientes, por isso,
+            você recebe com as suas joias, embalagens que reforçam o seu empoderamento
+            e exclusividade.
           </p>
           <ul className="mt-8 space-y-3">
             {[

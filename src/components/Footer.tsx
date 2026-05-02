@@ -26,10 +26,22 @@ export function Footer() {
           <div>
             <h4 className="text-[11px] tracking-[0.3em] uppercase text-background/60">Catálogo</h4>
             <ul className="mt-5 space-y-3 text-sm text-background/85">
-              <li><a href="#" className="hover:text-nude transition">Anéis</a></li>
-              <li><a href="#" className="hover:text-nude transition">Brincos</a></li>
-              <li><a href="#" className="hover:text-nude transition">Colares</a></li>
-              <li><a href="#" className="hover:text-nude transition">Pulseiras</a></li>
+              {[
+                "Blog",
+                "Colares",
+                "Brincos",
+                "Anéis",
+                "Pulseiras",
+                "Pingentes",
+                "Berloques",
+                "Piercings",
+                "Tornozeleiras",
+                "Cuidados com suas pratas",
+              ].map((label) => (
+                <li key={label}>
+                  <a href="#" className="hover:text-nude transition">{label}</a>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -37,7 +49,7 @@ export function Footer() {
             <h4 className="text-[11px] tracking-[0.3em] uppercase text-background/60">Atendimento</h4>
             <ul className="mt-5 space-y-3 text-sm text-background/85">
               <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-nude" /> Showroom (com agendamento)</li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-nude" /> contato@prataz.com.br</li>
+              <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-nude" /><span>contato@prataz.com.br</span></li>
               <li><a href="#vip" className="hover:text-nude transition">Grupo VIP WhatsApp</a></li>
               <li><a href="#garantia" className="hover:text-nude transition">Garantia 925</a></li>
             </ul>

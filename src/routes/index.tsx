@@ -40,9 +40,7 @@ function Index() {
       <Header />
       <main>
         <HeroBanner />
-        <Categories />
         <MostLoved />
-        <Authenticity />
         <Unboxing />
         <Showroom />
         <VipGroup />
