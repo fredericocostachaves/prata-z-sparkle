@@ -9,18 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ShowroomRouteImport } from './routes/showroom'
+import { Route as SacolaRouteImport } from './routes/sacola'
+import { Route as PoliticaTrocaRouteImport } from './routes/politica-troca'
+import { Route as PoliticaPrivacidadeRouteImport } from './routes/politica-privacidade'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as GrupoVipRouteImport } from './routes/grupo-vip'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as EntregaRouteImport } from './routes/entrega'
 import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as ContaRouteImport } from './routes/conta'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as BuscaRouteImport } from './routes/busca'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AutenticidadeRouteImport } from './routes/autenticidade'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
+import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as ContaEnderecosRouteImport } from './routes/conta.enderecos'
+import { Route as ContaDadosRouteImport } from './routes/conta.dados'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -31,14 +48,54 @@ const ShowroomRoute = ShowroomRouteImport.update({
   path: '/showroom',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SacolaRoute = SacolaRouteImport.update({
+  id: '/sacola',
+  path: '/sacola',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaTrocaRoute = PoliticaTrocaRouteImport.update({
+  id: '/politica-troca',
+  path: '/politica-troca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaPrivacidadeRoute = PoliticaPrivacidadeRouteImport.update({
+  id: '/politica-privacidade',
+  path: '/politica-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GrupoVipRoute = GrupoVipRouteImport.update({
   id: '/grupo-vip',
   path: '/grupo-vip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregaRoute = EntregaRouteImport.update({
+  id: '/entrega',
+  path: '/entrega',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContaRoute = ContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuscaRoute = BuscaRouteImport.update({
@@ -66,6 +123,21 @@ const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   path: '/produto/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContaPedidosRoute = ContaPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => ContaRoute,
+} as any)
+const ContaEnderecosRoute = ContaEnderecosRouteImport.update({
+  id: '/enderecos',
+  path: '/enderecos',
+  getParentRoute: () => ContaRoute,
+} as any)
+const ContaDadosRoute = ContaDadosRouteImport.update({
+  id: '/dados',
+  path: '/dados',
+  getParentRoute: () => ContaRoute,
+} as any)
 const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
   id: '/categoria/$slug',
   path: '/categoria/$slug',
@@ -82,12 +154,24 @@ export interface FileRoutesByFullPath {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/entrega': typeof EntregaRoute
+  '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
+  '/login': typeof LoginRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/politica-troca': typeof PoliticaTrocaRoute
+  '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
   '/sobre': typeof SobreRoute
+  '/termos': typeof TermosRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/conta/dados': typeof ContaDadosRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
 }
 export interface FileRoutesByTo {
@@ -95,12 +179,24 @@ export interface FileRoutesByTo {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/entrega': typeof EntregaRoute
+  '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
+  '/login': typeof LoginRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/politica-troca': typeof PoliticaTrocaRoute
+  '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
   '/sobre': typeof SobreRoute
+  '/termos': typeof TermosRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/conta/dados': typeof ContaDadosRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
 }
 export interface FileRoutesById {
@@ -109,12 +205,24 @@ export interface FileRoutesById {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/entrega': typeof EntregaRoute
+  '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
+  '/login': typeof LoginRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/politica-troca': typeof PoliticaTrocaRoute
+  '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
   '/sobre': typeof SobreRoute
+  '/termos': typeof TermosRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/conta/dados': typeof ContaDadosRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
 }
 export interface FileRouteTypes {
@@ -124,12 +232,24 @@ export interface FileRouteTypes {
     | '/autenticidade'
     | '/blog'
     | '/busca'
+    | '/checkout'
+    | '/conta'
     | '/contato'
+    | '/entrega'
+    | '/favoritos'
     | '/grupo-vip'
+    | '/login'
+    | '/politica-privacidade'
+    | '/politica-troca'
+    | '/sacola'
     | '/showroom'
     | '/sobre'
+    | '/termos'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/conta/dados'
+    | '/conta/enderecos'
+    | '/conta/pedidos'
     | '/produto/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,12 +257,24 @@ export interface FileRouteTypes {
     | '/autenticidade'
     | '/blog'
     | '/busca'
+    | '/checkout'
+    | '/conta'
     | '/contato'
+    | '/entrega'
+    | '/favoritos'
     | '/grupo-vip'
+    | '/login'
+    | '/politica-privacidade'
+    | '/politica-troca'
+    | '/sacola'
     | '/showroom'
     | '/sobre'
+    | '/termos'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/conta/dados'
+    | '/conta/enderecos'
+    | '/conta/pedidos'
     | '/produto/$slug'
   id:
     | '__root__'
@@ -150,12 +282,24 @@ export interface FileRouteTypes {
     | '/autenticidade'
     | '/blog'
     | '/busca'
+    | '/checkout'
+    | '/conta'
     | '/contato'
+    | '/entrega'
+    | '/favoritos'
     | '/grupo-vip'
+    | '/login'
+    | '/politica-privacidade'
+    | '/politica-troca'
+    | '/sacola'
     | '/showroom'
     | '/sobre'
+    | '/termos'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/conta/dados'
+    | '/conta/enderecos'
+    | '/conta/pedidos'
     | '/produto/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -164,16 +308,32 @@ export interface RootRouteChildren {
   AutenticidadeRoute: typeof AutenticidadeRoute
   BlogRoute: typeof BlogRouteWithChildren
   BuscaRoute: typeof BuscaRoute
+  CheckoutRoute: typeof CheckoutRoute
+  ContaRoute: typeof ContaRouteWithChildren
   ContatoRoute: typeof ContatoRoute
+  EntregaRoute: typeof EntregaRoute
+  FavoritosRoute: typeof FavoritosRoute
   GrupoVipRoute: typeof GrupoVipRoute
+  LoginRoute: typeof LoginRoute
+  PoliticaPrivacidadeRoute: typeof PoliticaPrivacidadeRoute
+  PoliticaTrocaRoute: typeof PoliticaTrocaRoute
+  SacolaRoute: typeof SacolaRoute
   ShowroomRoute: typeof ShowroomRoute
   SobreRoute: typeof SobreRoute
+  TermosRoute: typeof TermosRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre': {
       id: '/sobre'
       path: '/sobre'
@@ -188,6 +348,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShowroomRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sacola': {
+      id: '/sacola'
+      path: '/sacola'
+      fullPath: '/sacola'
+      preLoaderRoute: typeof SacolaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-troca': {
+      id: '/politica-troca'
+      path: '/politica-troca'
+      fullPath: '/politica-troca'
+      preLoaderRoute: typeof PoliticaTrocaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-privacidade': {
+      id: '/politica-privacidade'
+      path: '/politica-privacidade'
+      fullPath: '/politica-privacidade'
+      preLoaderRoute: typeof PoliticaPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/grupo-vip': {
       id: '/grupo-vip'
       path: '/grupo-vip'
@@ -195,11 +383,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GrupoVipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrega': {
+      id: '/entrega'
+      path: '/entrega'
+      fullPath: '/entrega'
+      preLoaderRoute: typeof EntregaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contato': {
       id: '/contato'
       path: '/contato'
       fullPath: '/contato'
       preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conta': {
+      id: '/conta'
+      path: '/conta'
+      fullPath: '/conta'
+      preLoaderRoute: typeof ContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/busca': {
@@ -237,6 +453,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdutoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conta/pedidos': {
+      id: '/conta/pedidos'
+      path: '/pedidos'
+      fullPath: '/conta/pedidos'
+      preLoaderRoute: typeof ContaPedidosRouteImport
+      parentRoute: typeof ContaRoute
+    }
+    '/conta/enderecos': {
+      id: '/conta/enderecos'
+      path: '/enderecos'
+      fullPath: '/conta/enderecos'
+      preLoaderRoute: typeof ContaEnderecosRouteImport
+      parentRoute: typeof ContaRoute
+    }
+    '/conta/dados': {
+      id: '/conta/dados'
+      path: '/dados'
+      fullPath: '/conta/dados'
+      preLoaderRoute: typeof ContaDadosRouteImport
+      parentRoute: typeof ContaRoute
+    }
     '/categoria/$slug': {
       id: '/categoria/$slug'
       path: '/categoria/$slug'
@@ -264,15 +501,38 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface ContaRouteChildren {
+  ContaDadosRoute: typeof ContaDadosRoute
+  ContaEnderecosRoute: typeof ContaEnderecosRoute
+  ContaPedidosRoute: typeof ContaPedidosRoute
+}
+
+const ContaRouteChildren: ContaRouteChildren = {
+  ContaDadosRoute: ContaDadosRoute,
+  ContaEnderecosRoute: ContaEnderecosRoute,
+  ContaPedidosRoute: ContaPedidosRoute,
+}
+
+const ContaRouteWithChildren = ContaRoute._addFileChildren(ContaRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AutenticidadeRoute: AutenticidadeRoute,
   BlogRoute: BlogRouteWithChildren,
   BuscaRoute: BuscaRoute,
+  CheckoutRoute: CheckoutRoute,
+  ContaRoute: ContaRouteWithChildren,
   ContatoRoute: ContatoRoute,
+  EntregaRoute: EntregaRoute,
+  FavoritosRoute: FavoritosRoute,
   GrupoVipRoute: GrupoVipRoute,
+  LoginRoute: LoginRoute,
+  PoliticaPrivacidadeRoute: PoliticaPrivacidadeRoute,
+  PoliticaTrocaRoute: PoliticaTrocaRoute,
+  SacolaRoute: SacolaRoute,
   ShowroomRoute: ShowroomRoute,
   SobreRoute: SobreRoute,
+  TermosRoute: TermosRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
 }
