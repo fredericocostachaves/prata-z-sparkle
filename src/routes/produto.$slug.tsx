@@ -209,6 +209,82 @@ function ProductPage() {
           </div>
         </div>
 
+        {/* Editorial content blocks (placeholder until Bling integration) */}
+        <section className="mt-24 grid lg:grid-cols-3 gap-8 border-t border-border pt-16">
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Sobre a peça</p>
+            <h2 className="mt-3 text-2xl font-serif text-foreground">Detalhes que fazem a diferença</h2>
+            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+              Cada {product.name.toLowerCase()} é produzida em prata esterlina 925, com selo de
+              autenticidade gravado e acabamento à mão por nossas joalheiras parceiras. Uma peça
+              pensada para acompanhar você do dia a dia aos momentos mais especiais.
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Composição</p>
+            <h2 className="mt-3 text-2xl font-serif text-foreground">Materiais & acabamento</h2>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>• Liga: prata 925 (92,5% prata pura)</li>
+              <li>• Acabamento: polido espelhado</li>
+              <li>• Banho protetor antiescurecimento</li>
+              <li>• Hipoalergênico e nickel-free</li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Como cuidar</p>
+            <h2 className="mt-3 text-2xl font-serif text-foreground">Para durar por gerações</h2>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>• Guarde em local seco, longe da umidade</li>
+              <li>• Evite contato com perfumes e cremes</li>
+              <li>• Limpe com flanela específica para prata</li>
+              <li>• Retire ao dormir, nadar ou se exercitar</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Story block */}
+        <section className="mt-20 grid lg:grid-cols-2 gap-12 items-center bg-secondary/40 rounded-sm p-8 md:p-14">
+          <div className="aspect-[4/5] bg-gradient-to-br from-nude-soft to-secondary rounded-sm flex items-center justify-center overflow-hidden">
+            <img src={product.images[1] ?? product.images[0]} alt="" className="h-full w-full object-cover" />
+          </div>
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">A história por trás</p>
+            <h2 className="mt-3 text-3xl md:text-4xl font-serif text-foreground">
+              Joias que celebram <em className="not-italic italic">você</em>
+            </h2>
+            <p className="mt-6 text-muted-foreground leading-relaxed">
+              Na Prata Z acreditamos que uma joia vai muito além do brilho. Ela carrega memórias,
+              afetos e a delicadeza de gestos cotidianos. Cada peça é selecionada com curadoria
+              cuidadosa para entregar significado, conforto e elegância atemporal.
+            </p>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              Nosso compromisso é com a autenticidade — por isso oferecemos garantia vitalícia
+              de troca de fechos e ajustes, além de atendimento individual quando você desejar.
+            </p>
+            <Link
+              to="/sobre"
+              className="mt-8 inline-block story-link text-[12px] tracking-[0.3em] uppercase"
+            >
+              Conheça a Prata Z
+            </Link>
+          </div>
+        </section>
+
+        {/* Service highlights */}
+        <section className="mt-20 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { title: "Envio para todo o Brasil", desc: "Frete grátis acima de R$ 299, entregas seguras com rastreio." },
+            { title: "Parcele em até 4x", desc: "Sem juros no cartão de crédito ou 5% off no Pix." },
+            { title: "Garantia vitalícia", desc: "Troca de fechos e pequenos ajustes para sempre." },
+            { title: "Embalagem premium", desc: "Caixa rígida assinada e cartão para presentear." },
+          ].map((item) => (
+            <div key={item.title} className="border border-border p-6 rounded-sm">
+              <h3 className="font-serif text-lg text-foreground">{item.title}</h3>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </section>
+
         {related.length > 0 && (
           <div className="mt-24">
             <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-8">
