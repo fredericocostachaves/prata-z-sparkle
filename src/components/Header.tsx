@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Search, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/prata-z-logo.jpeg";
+import logo from "@/assets/prata-z-logo.png";
 
 const navItems = [
   "Blog",
@@ -36,7 +36,7 @@ export function Header() {
             <img
               src={logo}
               alt="Prata Z Joias"
-              className="h-14 md:h-16 w-auto object-contain"
+              className="h-20 md:h-28 w-auto object-contain"
             />
           </Link>
 
