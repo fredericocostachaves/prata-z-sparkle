@@ -106,7 +106,7 @@ export function Header() {
           </form>
         )}
 
-        <nav className="hidden lg:flex items-center justify-center gap-7 pb-4 text-[12px] tracking-wide">
+        <nav className="hidden lg:flex items-center justify-center gap-8 pb-4 text-[14px] tracking-wide">
           {navItems.map((item) =>
             item.params ? (
               <Link
