@@ -8,9 +8,9 @@ const searchSchema = z.object({ q: z.string().optional().default("") });
 
 export const Route = createFileRoute("/busca")({
   validateSearch: (search) => searchSchema.parse(search),
-  head: ({ search }) => ({
+  head: () => ({
     meta: [
-      { title: `Busca: ${search.q || ""} — Prata Z Joias` },
+      { title: "Busca — Prata Z Joias" },
       { name: "description", content: "Resultados da busca no catálogo Prata Z Joias." },
     ],
   }),
