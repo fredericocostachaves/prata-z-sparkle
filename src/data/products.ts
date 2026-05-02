@@ -87,7 +87,7 @@ export const products: Product[] = [
   makeProduct(2, "colares", "Gargantilha Estrela", 199, "Estrela cravejada em zircônias, brilho discreto."),
   makeProduct(3, "brincos", "Argola Lisa Polida", 149, "Clássica argola lisa, leve e versátil.", { bestSeller: true }),
   makeProduct(4, "brincos", "Ear Cuff Folha", 129, "Ear cuff com design floral, sem necessidade de furo."),
-  makeProduct(5, "brincos", "Brinco Gota Cravejado", 219, "Gota com microcravação, brilho elegante.", { isNew: true, bestSeller: true }),
+  makeProduct(5, "brincos", "Brinco Gota Cravejado", 219, "Gota com microcravação, brilho elegante.", { isNew: true }),
   makeProduct(6, "aneis", "Trio de Anéis Delicados", 229, "Conjunto com três anéis finos e combináveis.", { tag: "Novidade", sizes: ["12", "14", "16", "18", "20"] }),
   makeProduct(7, "aneis", "Solitário Zircônia", 259, "Solitário clássico com zircônia central.", { sizes: ["12", "14", "16", "18", "20"] }),
   makeProduct(8, "aneis", "Aliança Polida 4mm", 299, "Aliança em prata 925 com acabamento polido.", { sizes: ["12", "14", "16", "18", "20", "22"] }),
