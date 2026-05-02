@@ -12,7 +12,7 @@ export function Showroom() {
           </h2>
           <p className="mt-6 text-muted-foreground leading-relaxed">
             Agende uma visita ao nosso showroom e viva uma experiência exclusiva: você
-            experimenta as peças com calma, ao lado de uma consultora dedicada, em um
+            experimenta as peças com calma, ao lado de um especialista dedicado, em um
             ambiente preparado para o seu momento.
           </p>
 
