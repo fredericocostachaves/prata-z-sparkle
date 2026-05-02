@@ -7,28 +7,28 @@ const slides = [
     title: "Parcele em até 4x sem juros",
     subtitle: "Seu porta joias renovado com a melhor forma de pagamento.",
     cta: "Comprar agora",
-    href: "#categorias",
+    href: "/categoria/colares",
   },
   {
     eyebrow: "Selo de qualidade",
     title: "Prata 925 com garantia de autenticidade",
     subtitle: "Cada peça acompanha certificado de origem e pureza.",
     cta: "Conhecer a garantia",
-    href: "#garantia",
+    href: "/autenticidade",
   },
   {
     eyebrow: "Logística cuidadosa",
     title: "Envio para todo o Brasil",
     subtitle: "Embalagem premium, rastreio e cuidado do começo ao fim.",
     cta: "Ver coleções",
-    href: "#mais-amados",
+    href: "/categoria/aneis",
   },
   {
     eyebrow: "Atendimento exclusivo",
     title: "Experiência exclusiva de compra",
     subtitle: "Consultoria personalizada e visita ao nosso showroom.",
     cta: "Agendar visita",
-    href: "#showroom",
+    href: "/showroom",
   },
 ];
 
