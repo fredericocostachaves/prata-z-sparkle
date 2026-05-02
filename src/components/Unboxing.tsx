@@ -22,19 +22,6 @@ export function Unboxing() {
             você recebe com as suas joias, embalagens que reforçam o seu empoderamento
             e exclusividade.
           </p>
-          <ul className="mt-8 space-y-3">
-            {[
-              "Caixa rígida em rosa nude com selo dourado de assinatura",
-              "Cartão com mensagem feita à mão para você ou para presentear",
-              "Flanela antiembaçante e saquinho protetor",
-              "Embalagem-presente disponível em todas as compras",
-            ].map((t) => (
-              <li key={t} className="flex gap-3 text-sm text-foreground/80">
-                <span className="mt-2 h-[3px] w-6 bg-nude shrink-0" />
-                {t}
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </section>
