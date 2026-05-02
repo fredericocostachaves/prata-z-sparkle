@@ -1,26 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Header } from "@/components/Header";
+import { HeroBanner } from "@/components/HeroBanner";
+import { Categories } from "@/components/Categories";
+import { MostLoved } from "@/components/MostLoved";
+import { Authenticity } from "@/components/Authenticity";
+import { Unboxing } from "@/components/Unboxing";
+import { Showroom } from "@/components/Showroom";
+import { VipGroup } from "@/components/VipGroup";
+import { Footer } from "@/components/Footer";
+import { FloatingButtons } from "@/components/FloatingButtons";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Prata Z Joias — Alta joalheria em prata 925" },
+      {
+        name: "description",
+        content:
+          "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil.",
+      },
+      { property: "og:title", content: "Prata Z Joias — Alta joalheria em prata 925" },
+      {
+        property: "og:description",
+        content:
+          "Joias em prata 925 com garantia, parcelamento em 4x sem juros e experiência exclusiva de compra.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
+  useScrollReveal();
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <main>
+        <HeroBanner />
+        <Categories />
+        <MostLoved />
+        <Authenticity />
+        <Unboxing />
+        <Showroom />
+        <VipGroup />
+      </main>
+      <Footer />
+      <FloatingButtons />
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
