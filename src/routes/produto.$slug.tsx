@@ -99,7 +99,7 @@ function ProductPage() {
                     active === i ? "border-foreground" : "border-transparent"
                   }`}
                 >
-                  <img src={img} alt="" className="h-full w-full object-cover" />
+                  <img src={img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
