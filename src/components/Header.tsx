@@ -113,7 +113,7 @@ export function Header() {
                 key={item.label}
                 to={item.to as "/categoria/$slug"}
                 params={item.params as { slug: string }}
-                className="story-link text-foreground/80 hover:text-foreground"
+                className="story-link text-white hover:text-white/80"
               >
                 {item.label}
               </Link>
@@ -121,7 +121,7 @@ export function Header() {
               <Link
                 key={item.label}
                 to={item.to as "/blog"}
-                className="story-link text-foreground/80 hover:text-foreground"
+                className="story-link text-white hover:text-white/80"
               >
                 {item.label}
               </Link>
@@ -138,7 +138,7 @@ export function Header() {
                   to={item.to as "/categoria/$slug"}
                   params={item.params as { slug: string }}
                   onClick={() => setOpen(false)}
-                  className="text-sm py-1 text-foreground/80"
+                  className="text-sm py-1 text-white"
                 >
                   {item.label}
                 </Link>
@@ -147,7 +147,7 @@ export function Header() {
                   key={item.label}
                   to={item.to as "/blog"}
                   onClick={() => setOpen(false)}
-                  className="text-sm py-1 text-foreground/80"
+                  className="text-sm py-1 text-white"
                 >
                   {item.label}
                 </Link>
