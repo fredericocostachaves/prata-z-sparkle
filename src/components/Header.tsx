@@ -92,11 +92,11 @@ export function Header() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="O que você está procurando?"
-              className="flex-1 border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:border-foreground"
+              className="flex-1 border border-white/40 bg-white/10 placeholder:text-white/70 text-white px-4 py-2 text-sm focus:outline-none focus:border-white"
             />
             <button
               type="submit"
-              className="bg-foreground text-background px-4 py-2 text-[11px] tracking-[0.2em] uppercase"
+              className="bg-white text-nude px-4 py-2 text-[11px] tracking-[0.2em] uppercase"
             >
               Buscar
             </button>
