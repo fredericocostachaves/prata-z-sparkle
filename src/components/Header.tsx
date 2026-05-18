@@ -54,14 +54,14 @@ export function Header() {
             <button
               aria-label="Buscar"
               onClick={() => setSearchOpen((v) => !v)}
-              className="p-2 hover:text-nude-deep transition-colors"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity"
             >
               <Search className="h-[18px] w-[18px]" />
             </button>
             <Link
               to="/favoritos"
               aria-label="Favoritos"
-              className="p-2 hover:text-nude-deep transition-colors hidden sm:block relative"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity hidden sm:block relative"
             >
               <Heart className="h-[18px] w-[18px]" />
               {fav.count > 0 && (
@@ -73,7 +73,7 @@ export function Header() {
             <Link
               to="/sacola"
               aria-label="Sacola"
-              className="p-2 hover:text-nude-deep transition-colors relative"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity relative"
             >
               <ShoppingBag className="h-[18px] w-[18px]" />
               {cart.count > 0 && (
