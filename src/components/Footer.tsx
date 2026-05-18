@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Mail, MapPin } from "lucide-react";
+import logo from "@/assets/prata-z-logo.png";
 
 const catalogo: { label: string; to: string; params?: Record<string, string> }[] = [
   { label: "Blog", to: "/blog" },
@@ -32,10 +33,12 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 sm:px-10 py-20">
         <div className="grid md:grid-cols-4 gap-12">
           <div className="md:col-span-1">
-            <div className="brand-wordmark text-3xl">
-              Prata <span className="italic font-serif text-nude">Z</span>
-            </div>
-            <p className="text-[10px] tracking-[0.45em] uppercase text-background/60 mt-1">
+            <img
+              src={logo}
+              alt="Prata Z Joias"
+              className="h-16 w-auto object-contain brightness-0 invert"
+            />
+            <p className="text-[10px] tracking-[0.45em] uppercase text-background/60 mt-3">
               Joias · Sterling 925
             </p>
             <p className="mt-6 text-sm text-background/70 leading-relaxed">
