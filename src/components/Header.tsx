@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/prata-z-logo-white.png";
+import logo from "@/assets/prata-z-logo.png";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 
