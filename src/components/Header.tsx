@@ -47,7 +47,7 @@ export function Header() {
           </button>
 
           <Link to="/" className="flex-1 lg:flex-none flex justify-center lg:justify-start">
-            <img src={logo} alt="Prata Z Joias" className="h-14 md:h-20 w-auto object-contain brightness-0 invert" />
+            <img src={logo} alt="Prata Z Joias" width="160" height="80" decoding="async" fetchPriority="high" className="h-14 md:h-20 w-auto object-contain brightness-0 invert" />
           </Link>
 
           <div className="flex items-center gap-1 md:gap-3">
