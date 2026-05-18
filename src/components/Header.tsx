@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/prata-z-logo.png";
+import logo from "@/assets/prata-z-logo-white.png";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 
@@ -35,7 +35,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background/85 backdrop-blur-xl border-b border-border/40">
+    <header className="sticky top-0 z-40 w-full bg-nude text-white border-b border-white/10">
       <div className="mx-auto max-w-7xl px-4 sm:px-8">
         <div className="flex items-center justify-between py-2 md:py-2">
           <button
@@ -54,14 +54,14 @@ export function Header() {
             <button
               aria-label="Buscar"
               onClick={() => setSearchOpen((v) => !v)}
-              className="p-2 hover:text-nude-deep transition-colors"
+              className="p-2 text-white hover:text-white/80 transition-colors"
             >
               <Search className="h-[18px] w-[18px]" />
             </button>
             <Link
               to="/favoritos"
               aria-label="Favoritos"
-              className="p-2 hover:text-nude-deep transition-colors hidden sm:block relative"
+              className="p-2 text-white hover:text-white/80 transition-colors hidden sm:block relative"
             >
               <Heart className="h-[18px] w-[18px]" />
               {fav.count > 0 && (
@@ -73,7 +73,7 @@ export function Header() {
             <Link
               to="/sacola"
               aria-label="Sacola"
-              className="p-2 hover:text-nude-deep transition-colors relative"
+              className="p-2 text-white hover:text-white/80 transition-colors relative"
             >
               <ShoppingBag className="h-[18px] w-[18px]" />
               {cart.count > 0 && (
@@ -92,11 +92,11 @@ export function Header() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="O que você está procurando?"
-              className="flex-1 border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:border-foreground"
+              className="flex-1 border border-white/40 bg-white/10 placeholder:text-white/70 text-white px-4 py-2 text-sm focus:outline-none focus:border-white"
             />
             <button
               type="submit"
-              className="bg-foreground text-background px-4 py-2 text-[11px] tracking-[0.2em] uppercase"
+              className="bg-white text-nude px-4 py-2 text-[11px] tracking-[0.2em] uppercase"
             >
               Buscar
             </button>
@@ -113,7 +113,7 @@ export function Header() {
                 key={item.label}
                 to={item.to as "/categoria/$slug"}
                 params={item.params as { slug: string }}
-                className="story-link text-foreground/80 hover:text-foreground"
+                className="story-link text-white hover:text-white/80"
               >
                 {item.label}
               </Link>
@@ -121,7 +121,7 @@ export function Header() {
               <Link
                 key={item.label}
                 to={item.to as "/blog"}
-                className="story-link text-foreground/80 hover:text-foreground"
+                className="story-link text-white hover:text-white/80"
               >
                 {item.label}
               </Link>
@@ -138,7 +138,7 @@ export function Header() {
                   to={item.to as "/categoria/$slug"}
                   params={item.params as { slug: string }}
                   onClick={() => setOpen(false)}
-                  className="text-sm py-1 text-foreground/80"
+                  className="text-sm py-1 text-white"
                 >
                   {item.label}
                 </Link>
@@ -147,7 +147,7 @@ export function Header() {
                   key={item.label}
                   to={item.to as "/blog"}
                   onClick={() => setOpen(false)}
-                  className="text-sm py-1 text-foreground/80"
+                  className="text-sm py-1 text-white"
                 >
                   {item.label}
                 </Link>
