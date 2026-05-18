@@ -91,6 +91,10 @@
   --cta-hover: oklch(0.48 0.22 27);
   --charcoal: oklch(0.18 0.01 20);
   --whatsapp: oklch(0.7 0.18 145);
+
+  /* Header brand surface — rosa antigo #D49B99 */
+  --header: oklch(0.72 0.06 18);
+  --header-foreground: oklch(1 0 0);
 }
 
 @layer base {
