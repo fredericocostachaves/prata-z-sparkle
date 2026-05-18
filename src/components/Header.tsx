@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/prata-z-logo.png";
+import logo from "@/assets/prata-z-logo-white.png";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 
@@ -35,7 +35,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background/85 backdrop-blur-xl border-b border-border/40">
+    <header className="sticky top-0 z-40 w-full bg-header text-header-foreground border-b border-header-foreground/15">
       <div className="mx-auto max-w-7xl px-4 sm:px-8">
         <div className="flex items-center justify-between py-2 md:py-2">
           <button
@@ -54,14 +54,14 @@ export function Header() {
             <button
               aria-label="Buscar"
               onClick={() => setSearchOpen((v) => !v)}
-              className="p-2 hover:text-nude-deep transition-colors"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity"
             >
               <Search className="h-[18px] w-[18px]" />
             </button>
             <Link
               to="/favoritos"
               aria-label="Favoritos"
-              className="p-2 hover:text-nude-deep transition-colors hidden sm:block relative"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity hidden sm:block relative"
             >
               <Heart className="h-[18px] w-[18px]" />
               {fav.count > 0 && (
@@ -73,7 +73,7 @@ export function Header() {
             <Link
               to="/sacola"
               aria-label="Sacola"
-              className="p-2 hover:text-nude-deep transition-colors relative"
+              className="p-2 text-header-foreground hover:opacity-80 transition-opacity relative"
             >
               <ShoppingBag className="h-[18px] w-[18px]" />
               {cart.count > 0 && (

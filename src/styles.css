@@ -42,6 +42,8 @@
   --color-cta-hover: var(--cta-hover);
   --color-charcoal: var(--charcoal);
   --color-whatsapp: var(--whatsapp);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
 
   --shadow-soft: 0 10px 40px -20px oklch(0.6 0.08 20 / 0.18);
   --shadow-elegant: 0 30px 80px -40px oklch(0.5 0.1 20 / 0.25);
@@ -89,6 +91,10 @@
   --cta-hover: oklch(0.48 0.22 27);
   --charcoal: oklch(0.18 0.01 20);
   --whatsapp: oklch(0.7 0.18 145);
+
+  /* Header brand surface — rosa antigo #D49B99 */
+  --header: oklch(0.72 0.06 18);
+  --header-foreground: oklch(1 0 0);
 }
 
 @layer base {
