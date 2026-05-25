@@ -3,7 +3,7 @@ import { Calendar, MapPin } from "lucide-react";
 
 export function Showroom() {
   return (
-    <section id="showroom" className="fluid-nude py-24 md:py-32">
+    <section id="showroom" className="fluid-nude py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-10 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div className="order-2 lg:order-1 reveal">
           <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Showroom Prata Z</p>

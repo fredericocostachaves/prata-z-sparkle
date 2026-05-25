@@ -87,7 +87,7 @@ export function GoogleReviews() {
   }, [isPaused]);
 
   return (
-    <section className="py-20 md:py-28 bg-background">
+    <section className="py-16 md:py-24 bg-background">
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">

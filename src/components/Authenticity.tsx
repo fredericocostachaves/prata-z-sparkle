@@ -2,7 +2,7 @@ import { ShieldCheck, Award, Sparkles } from "lucide-react";
 
 export function Authenticity() {
   return (
-    <section id="garantia" className="fluid-nude py-24 md:py-32">
+    <section id="garantia" className="fluid-nude py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
         <div className="text-center max-w-2xl mx-auto">
           <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Compromisso Prata Z</p>
