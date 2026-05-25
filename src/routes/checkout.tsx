@@ -95,7 +95,6 @@ function CheckoutPage() {
                 {[
                   { v: "credito", l: "Cartão de crédito · 4x sem juros" },
                   { v: "pix", l: "Pix · 5% de desconto" },
-                  { v: "boleto", l: "Boleto bancário" },
                 ].map((opt) => (
                   <label key={opt.v} className="flex items-center gap-3 border border-border p-4 cursor-pointer hover:border-foreground">
                     <input type="radio" name="pay" value={opt.v} checked={data.payment === opt.v} onChange={(e) => setData({ ...data, payment: e.target.value })} />
