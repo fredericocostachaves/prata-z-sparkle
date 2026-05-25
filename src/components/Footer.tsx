@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Mail, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import logo from "@/assets/prata-z-logo.png";
 
 const catalogo: { label: string; to: string; params?: Record<string, string> }[] = [
@@ -45,15 +45,6 @@ export function Footer() {
               Alta joalheria em prata 925 com atendimento personalizado. Peças que
               celebram momentos e acompanham a sua história.
             </p>
-            <div className="flex gap-4 mt-6">
-              <a
-                href="https://instagram.com"
-                aria-label="Instagram"
-                className="h-10 w-10 rounded-full border border-background/20 flex items-center justify-center hover:bg-nude hover:border-nude transition"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
-            </div>
           </div>
 
           <div>
