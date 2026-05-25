@@ -33,23 +33,23 @@ export function CookieConsent() {
       aria-label="Aviso de cookies"
       className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 sm:px-6 sm:pb-6"
     >
-      <div className="mx-auto max-w-4xl bg-foreground text-background shadow-soft border border-background/10">
+      <div className="mx-auto max-w-4xl bg-nude text-foreground shadow-soft border border-foreground/10">
         <div className="relative p-5 sm:p-6 flex flex-col md:flex-row md:items-center gap-5">
           <button
             type="button"
             onClick={() => decide("rejected")}
             aria-label="Fechar aviso"
-            className="absolute top-3 right-3 text-background/60 hover:text-background transition"
+            className="absolute top-3 right-3 text-foreground/60 hover:text-foreground transition"
           >
             <X className="h-4 w-4" />
           </button>
-          <div className="flex-1 text-sm leading-relaxed text-background/85 pr-6">
+          <div className="flex-1 text-sm leading-relaxed text-foreground/85 pr-6">
             Utilizamos cookies para melhorar a sua experiência, personalizar
             conteúdo e analisar o tráfego do site. Ao continuar, você concorda
             com a nossa{" "}
             <Link
               to="/politica-cookies"
-              className="underline hover:text-nude transition"
+              className="underline hover:text-foreground/70 transition"
             >
               Política de Cookies
             </Link>
@@ -59,7 +59,7 @@ export function CookieConsent() {
             <button
               type="button"
               onClick={() => decide("rejected")}
-              className="px-5 py-2.5 text-[11px] tracking-[0.2em] uppercase border border-background/30 hover:border-background transition"
+              className="px-5 py-2.5 text-[11px] tracking-[0.2em] uppercase border border-foreground/30 hover:border-foreground transition"
             >
               Recusar
             </button>
