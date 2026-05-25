@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 
 const reviews = [
@@ -57,6 +57,8 @@ function StarRating({ rating }: { rating: number }) {
 
 export function GoogleReviews() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const indexRef = useRef(0);
 
   const scroll = (dir: "left" | "right") => {
     if (scrollRef.current) {
@@ -64,6 +66,25 @@ export function GoogleReviews() {
       scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
     }
   };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const interval = setInterval(() => {
+      if (isPaused) return;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (el.scrollLeft >= maxScroll - 5) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+        indexRef.current = 0;
+      } else {
+        el.scrollBy({ left: 360, behavior: "smooth" });
+        indexRef.current += 1;
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isPaused]);
 
   return (
     <section className="py-20 md:py-28 bg-background">
@@ -134,6 +155,10 @@ export function GoogleReviews() {
         {/* Carousel */}
         <div
           ref={scrollRef}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
           className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-6 px-6"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
