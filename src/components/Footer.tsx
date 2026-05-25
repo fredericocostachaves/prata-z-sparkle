@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Mail, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import logo from "@/assets/prata-z-logo.png";
 
 const catalogo: { label: string; to: string; params?: Record<string, string> }[] = [
