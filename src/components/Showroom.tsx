@@ -48,6 +48,9 @@ export function Showroom() {
             src={showroom}
             alt="Showroom Prata Z com vitrines de joias em prata 925"
             loading="lazy"
+            decoding="async"
+            width="800"
+            height="1000"
             className="h-full w-full object-cover"
           />
         </div>
