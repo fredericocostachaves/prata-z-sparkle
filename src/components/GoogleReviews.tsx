@@ -155,6 +155,10 @@ export function GoogleReviews() {
         {/* Carousel */}
         <div
           ref={scrollRef}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
           className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-6 px-6"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
