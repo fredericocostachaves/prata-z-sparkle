@@ -1,6 +1,6 @@
 export function VipGroup() {
   return (
-    <section id="vip" className="py-24 md:py-32 bg-background">
+    <section id="vip" className="py-16 md:py-24 bg-background">
       <div className="mx-auto max-w-4xl px-6 sm:px-10 text-center">
         <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Comunidade exclusiva</p>
         <h2 className="mt-5 text-4xl md:text-5xl text-foreground">

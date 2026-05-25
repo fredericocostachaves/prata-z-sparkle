@@ -5,7 +5,7 @@ import { getBestSellers } from "@/data/products";
 export function MostLoved() {
   const products = getBestSellers();
   return (
-    <section id="mais-amados" className="py-24 md:py-32 bg-background">
+    <section id="mais-amados" className="py-16 md:py-24 bg-background">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-14 md:mb-20 gap-6">
           <div className="max-w-2xl">
