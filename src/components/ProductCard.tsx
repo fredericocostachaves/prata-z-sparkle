@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import type { Product } from "@/data/products";
-import { formatInstallment, formatPrice } from "@/data/products";
+import { formatPrice } from "@/data/products";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
 
@@ -63,7 +63,6 @@ export function ProductCard({ product, index = 0 }: Props) {
           </h3>
         </Link>
         <p className="mt-2 text-base md:text-lg text-foreground font-serif">{formatPrice(product.price)}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{formatInstallment(product.price)}</p>
       </div>
     </article>
   );
