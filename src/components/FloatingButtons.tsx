@@ -4,7 +4,7 @@ export function FloatingButtons() {
   return (
     <div className="fixed right-5 bottom-5 sm:right-7 sm:bottom-7 z-50 flex flex-col gap-4">
       <a
-        href="https://www.instagram.com/prata_z/"
+        href="https://instagram.com"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Instagram"
@@ -13,7 +13,7 @@ export function FloatingButtons() {
         <Instagram className="h-5 w-5" />
       </a>
       <a
-        href="https://wa.me/5511965849443"
+        href="https://wa.me/5500000000000"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Falar no WhatsApp"
