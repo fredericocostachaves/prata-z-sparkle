@@ -12,9 +12,9 @@ const cats = [
 
 export function Categories() {
   return (
-    <section id="categorias" className="fluid-section py-24 md:py-32">
+    <section id="categorias" className="fluid-section py-12 md:py-16">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <div className="text-center max-w-2xl mx-auto mb-16 md:mb-20">
+        <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
           <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Catálogo</p>
           <h2 className="mt-5 text-4xl md:text-5xl text-foreground">
             Encontre a joia que conta a sua história
