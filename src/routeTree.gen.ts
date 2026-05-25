@@ -15,6 +15,7 @@ import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SacolaRouteImport } from './routes/sacola'
 import { Route as PoliticaTrocaRouteImport } from './routes/politica-troca'
 import { Route as PoliticaPrivacidadeRouteImport } from './routes/politica-privacidade'
+import { Route as PoliticaCookiesRouteImport } from './routes/politica-cookies'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GrupoVipRouteImport } from './routes/grupo-vip'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
@@ -61,6 +62,11 @@ const PoliticaTrocaRoute = PoliticaTrocaRouteImport.update({
 const PoliticaPrivacidadeRoute = PoliticaPrivacidadeRouteImport.update({
   id: '/politica-privacidade',
   path: '/politica-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaCookiesRoute = PoliticaCookiesRouteImport.update({
+  id: '/politica-cookies',
+  path: '/politica-cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
   '/login': typeof LoginRoute
+  '/politica-cookies': typeof PoliticaCookiesRoute
   '/politica-privacidade': typeof PoliticaPrivacidadeRoute
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
   '/login': typeof LoginRoute
+  '/politica-cookies': typeof PoliticaCookiesRoute
   '/politica-privacidade': typeof PoliticaPrivacidadeRoute
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/favoritos': typeof FavoritosRoute
   '/grupo-vip': typeof GrupoVipRoute
   '/login': typeof LoginRoute
+  '/politica-cookies': typeof PoliticaCookiesRoute
   '/politica-privacidade': typeof PoliticaPrivacidadeRoute
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/grupo-vip'
     | '/login'
+    | '/politica-cookies'
     | '/politica-privacidade'
     | '/politica-troca'
     | '/sacola'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/grupo-vip'
     | '/login'
+    | '/politica-cookies'
     | '/politica-privacidade'
     | '/politica-troca'
     | '/sacola'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/grupo-vip'
     | '/login'
+    | '/politica-cookies'
     | '/politica-privacidade'
     | '/politica-troca'
     | '/sacola'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   FavoritosRoute: typeof FavoritosRoute
   GrupoVipRoute: typeof GrupoVipRoute
   LoginRoute: typeof LoginRoute
+  PoliticaCookiesRoute: typeof PoliticaCookiesRoute
   PoliticaPrivacidadeRoute: typeof PoliticaPrivacidadeRoute
   PoliticaTrocaRoute: typeof PoliticaTrocaRoute
   SacolaRoute: typeof SacolaRoute
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-privacidade'
       fullPath: '/politica-privacidade'
       preLoaderRoute: typeof PoliticaPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-cookies': {
+      id: '/politica-cookies'
+      path: '/politica-cookies'
+      fullPath: '/politica-cookies'
+      preLoaderRoute: typeof PoliticaCookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -527,6 +547,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritosRoute: FavoritosRoute,
   GrupoVipRoute: GrupoVipRoute,
   LoginRoute: LoginRoute,
+  PoliticaCookiesRoute: PoliticaCookiesRoute,
   PoliticaPrivacidadeRoute: PoliticaPrivacidadeRoute,
   PoliticaTrocaRoute: PoliticaTrocaRoute,
   SacolaRoute: SacolaRoute,
