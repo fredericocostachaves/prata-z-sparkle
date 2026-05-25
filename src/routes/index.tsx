@@ -42,10 +42,10 @@ function Index() {
       <main>
         <HeroBanner />
         <MostLoved />
-        <GoogleReviews />
         <Unboxing />
         <Showroom />
         <VipGroup />
+        <GoogleReviews />
       </main>
       <Footer />
       <FloatingButtons />
