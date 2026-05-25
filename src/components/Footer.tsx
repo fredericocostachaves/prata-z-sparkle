@@ -121,7 +121,7 @@ export function Footer() {
 
         <div className="mt-16 pt-8 border-t border-background/15 flex flex-col md:flex-row justify-between gap-4 text-xs text-background/55">
           <p>© {new Date().getFullYear()} Prata Z Joias. Todos os direitos reservados.</p>
-          <p>CNPJ 00.000.000/0001-00 · Pagamentos seguros</p>
+          <p>CNPJ 47.369.536/0001-42 · Pagamentos seguros</p>
         </div>
       </div>
     </footer>
