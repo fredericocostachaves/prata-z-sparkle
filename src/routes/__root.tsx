@@ -77,6 +77,7 @@ function RootComponent() {
       <FavoritesProvider>
         <Outlet />
         <Toaster />
+        <CookieConsent />
         {/* Bot Conversa widget slot — substituir pelo script do widget quando integrado */}
         <div id="botconversa-widget" />
       </FavoritesProvider>
