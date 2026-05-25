@@ -38,6 +38,9 @@ export function Categories() {
                   src={c.img}
                   alt={`Categoria ${c.name} em prata 925`}
                   loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="800"
                   className="h-full w-full object-cover"
                 />
               </div>
