@@ -23,6 +23,7 @@ const institucional: { label: string; to: string }[] = [
   { label: "Entrega e frete", to: "/entrega" },
   { label: "Trocas e devoluções", to: "/politica-troca" },
   { label: "Política de privacidade", to: "/politica-privacidade" },
+  { label: "Política de cookies", to: "/politica-cookies" },
   { label: "Termos de uso", to: "/termos" },
   { label: "Contato", to: "/contato" },
 ];
