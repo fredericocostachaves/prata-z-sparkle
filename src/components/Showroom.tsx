@@ -8,7 +8,7 @@ export function Showroom() {
         <div className="order-2 lg:order-1 reveal">
           <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Showroom Prata Z</p>
           <h2 className="mt-5 text-4xl md:text-5xl text-foreground">
-            Atendimento individual, <em className="font-serif italic">só para você</em>
+            Atendimento individual, <em className="font-serif italic">porque você merece um momento só seu</em>
           </h2>
           <p className="mt-6 text-muted-foreground leading-relaxed">
             Agende uma visita ao nosso showroom e viva uma experiência exclusiva: você
