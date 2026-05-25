@@ -12,7 +12,7 @@ export function VipGroup() {
         </p>
 
         <a
-          href="https://chat.whatsapp.com/"
+          href="https://chat.whatsapp.com/JOxxfnjQtewCs1UEylAVfS"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-10 inline-flex items-center gap-3 bg-foreground text-background px-10 py-4 text-[13px] tracking-[0.2em] uppercase hover:bg-cta transition-all hover:shadow-elegant"

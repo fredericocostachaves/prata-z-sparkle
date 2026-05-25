@@ -18,7 +18,7 @@ function VipPage() {
     <PageShell eyebrow="Comunidade exclusiva" title="Grupo VIP no WhatsApp" subtitle="Lançamentos antecipados, descontos exclusivos, sorteios e curadoria especial — antes de qualquer outro lugar.">
       <section className="mx-auto max-w-3xl px-6 sm:px-10 py-12 md:py-16 text-center">
         <a
-          href="https://chat.whatsapp.com/"
+          href="https://chat.whatsapp.com/JOxxfnjQtewCs1UEylAVfS"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-3 bg-foreground text-background px-10 py-4 text-[13px] tracking-[0.2em] uppercase hover:bg-cta transition-all hover:shadow-elegant"
