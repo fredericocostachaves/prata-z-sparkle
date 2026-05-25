@@ -74,7 +74,6 @@ function makeProduct(
     highlights: [
       "Prata esterlina 925 com selo de autenticidade",
       "Embalagem premium pronta para presentear",
-      "Garantia vitalícia de troca de fechos e ajustes",
     ],
     sizes: extras.sizes,
     ...extras,
