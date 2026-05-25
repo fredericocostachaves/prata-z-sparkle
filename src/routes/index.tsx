@@ -42,6 +42,7 @@ function Index() {
       <main>
         <HeroBanner />
         <MostLoved />
+        <GoogleReviews />
         <Unboxing />
         <Showroom />
         <VipGroup />
