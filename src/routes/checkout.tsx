@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useCart } from "@/contexts/CartContext";
-import { formatPrice, formatInstallment } from "@/data/products";
+import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -15,19 +15,37 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
+const NOTIFY_PHONE = "5511965849443";
+
 function CheckoutPage() {
   const cart = useCart();
   const navigate = useNavigate();
-  const [step, setStep] = useState<"dados" | "entrega" | "pagamento">("dados");
+  const [step, setStep] = useState<"dados" | "entrega">("dados");
   const [data, setData] = useState({
     name: "", email: "", cpf: "", phone: "",
     cep: "", street: "", number: "", city: "", state: "",
-    payment: "credito",
   });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Pedido recebido!", { description: "Você receberá um e-mail de confirmação." });
+
+    const itemsText = cart.items
+      .map((it) => `• ${it.name}${it.size ? ` (Tam: ${it.size})` : ""} × ${it.qty} — ${formatPrice(it.price * it.qty)}`)
+      .join("\n");
+    const message =
+      `🛍️ *Nova venda — Prata Z*\n\n` +
+      `*Cliente:* ${data.name}\n` +
+      `*E-mail:* ${data.email}\n` +
+      `*CPF:* ${data.cpf}\n` +
+      `*Telefone:* ${data.phone}\n\n` +
+      `*Endereço:* ${data.street}, ${data.number} — ${data.city}/${data.state} — CEP ${data.cep}\n\n` +
+      `*Itens:*\n${itemsText}\n\n` +
+      `*Total:* ${formatPrice(cart.total)}`;
+
+    const url = `https://wa.me/${NOTIFY_PHONE}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    toast.success("Pedido recebido!", { description: "Enviamos os detalhes para confirmação via WhatsApp." });
     cart.clear();
     navigate({ to: "/" });
   };
@@ -47,7 +65,7 @@ function CheckoutPage() {
       <section className="mx-auto max-w-6xl px-6 sm:px-10 py-12 md:py-16 grid lg:grid-cols-3 gap-12">
         <form onSubmit={submit} className="lg:col-span-2 space-y-8">
           <div className="flex gap-2 text-[11px] tracking-[0.2em] uppercase">
-            {(["dados", "entrega", "pagamento"] as const).map((s) => (
+            {(["dados", "entrega"] as const).map((s) => (
               <button
                 key={s}
                 type="button"
@@ -84,25 +102,6 @@ function CheckoutPage() {
                 <input required placeholder="Número" value={data.number} onChange={(e) => setData({ ...data, number: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
                 <input required placeholder="Estado" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               </div>
-              <button type="button" onClick={() => setStep("pagamento")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
-            </div>
-          )}
-
-          {step === "pagamento" && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-serif">Pagamento</h2>
-              <div className="space-y-2">
-                {[
-                  { v: "credito", l: "Cartão de crédito · 4x sem juros" },
-                  { v: "pix", l: "Pix · 5% de desconto" },
-                  { v: "boleto", l: "Boleto bancário" },
-                ].map((opt) => (
-                  <label key={opt.v} className="flex items-center gap-3 border border-border p-4 cursor-pointer hover:border-foreground">
-                    <input type="radio" name="pay" value={opt.v} checked={data.payment === opt.v} onChange={(e) => setData({ ...data, payment: e.target.value })} />
-                    <span>{opt.l}</span>
-                  </label>
-                ))}
-              </div>
               <button type="submit" className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition">
                 Confirmar pedido
               </button>
@@ -123,7 +122,6 @@ function CheckoutPage() {
           <div className="mt-6 pt-6 border-t border-border flex justify-between text-lg font-serif">
             <span>Total</span><span>{formatPrice(cart.total)}</span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{formatInstallment(cart.total)}</p>
         </aside>
       </section>
     </PageShell>
