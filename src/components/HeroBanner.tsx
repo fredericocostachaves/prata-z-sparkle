@@ -61,8 +61,11 @@ export function HeroBanner() {
             <img
               src={images[idx]}
               alt={s.title}
+              decoding="async"
               className="h-full w-full object-cover animate-ken-burns"
-              {...(idx === 0 ? { fetchPriority: "high" as const } : { loading: "lazy" as const })}
+              {...(idx === 0
+                ? { fetchPriority: "high" as const, loading: "eager" as const }
+                : { loading: "lazy" as const })}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-background/10" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/0 to-transparent" />

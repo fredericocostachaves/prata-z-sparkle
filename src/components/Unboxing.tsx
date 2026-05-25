@@ -2,13 +2,16 @@ import unboxing from "@/assets/unboxing.jpg";
 
 export function Unboxing() {
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-12 md:py-16 bg-background">
       <div className="mx-auto max-w-7xl px-6 sm:px-10 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div className="img-zoom aspect-[4/5] rounded-sm reveal">
           <img
             src={unboxing}
             alt="Embalagem rosa nude da Prata Z com colar de prata 925 e cartão personalizado"
             loading="lazy"
+            decoding="async"
+            width="800"
+            height="1000"
             className="h-full w-full object-cover"
           />
         </div>

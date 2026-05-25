@@ -11,6 +11,7 @@ import { VipGroup } from "@/components/VipGroup";
 import { Footer } from "@/components/Footer";
 import { FloatingButtons } from "@/components/FloatingButtons";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import hero1 from "@/assets/hero-1.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +29,9 @@ export const Route = createFileRoute("/")({
           "Joias em prata 925 com garantia, parcelamento em 4x sem juros e experiência exclusiva de compra.",
       },
       { property: "og:type", content: "website" },
+    ],
+    links: [
+      { rel: "preload", as: "image", href: hero1, fetchpriority: "high" },
     ],
   }),
   component: Index,
