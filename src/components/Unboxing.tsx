@@ -9,6 +9,9 @@ export function Unboxing() {
             src={unboxing}
             alt="Embalagem rosa nude da Prata Z com colar de prata 925 e cartão personalizado"
             loading="lazy"
+            decoding="async"
+            width="800"
+            height="1000"
             className="h-full w-full object-cover"
           />
         </div>
