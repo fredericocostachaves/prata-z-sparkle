@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { HeroBanner } from "@/components/HeroBanner";
 import { Categories } from "@/components/Categories";
 import { MostLoved } from "@/components/MostLoved";
+import { GoogleReviews } from "@/components/GoogleReviews";
 import { Authenticity } from "@/components/Authenticity";
 import { Unboxing } from "@/components/Unboxing";
 import { Showroom } from "@/components/Showroom";
@@ -41,6 +42,7 @@ function Index() {
       <main>
         <HeroBanner />
         <MostLoved />
+        <GoogleReviews />
         <Unboxing />
         <Showroom />
         <VipGroup />
