@@ -11,6 +11,7 @@ import { VipGroup } from "@/components/VipGroup";
 import { Footer } from "@/components/Footer";
 import { FloatingButtons } from "@/components/FloatingButtons";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import hero1 from "@/assets/hero-1.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
