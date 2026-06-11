@@ -25,10 +25,38 @@ function CheckoutPage() {
   const [step, setStep] = useState<"dados" | "entrega" | "pagamento">("dados");
   const [data, setData] = useState({
     name: "", email: "", cpf: "", phone: "",
-    cep: "", street: "", number: "", city: "", state: "",
+    cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "",
     payment: "credito" as "credito" | "pix",
     installments: 1,
   });
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const handleCepChange = async (raw: string) => {
+    const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
+    setData((d) => ({ ...d, cep: masked }));
+    const digits = masked.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const json = await res.json();
+      if (json.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        street: json.logradouro || d.street,
+        neighborhood: json.bairro || d.neighborhood,
+        city: json.localidade || d.city,
+        state: json.uf || d.state,
+      }));
+    } catch {
+      toast.error("Não foi possível consultar o CEP");
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
