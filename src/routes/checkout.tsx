@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useCart } from "@/contexts/CartContext";
-import { formatPrice, formatInstallment } from "@/data/products";
+import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -15,6 +15,10 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
+const PIX_DISCOUNT_RATE = 0.1; // 10%
+const MIN_INSTALLMENT_VALUE = 37.5; // R$ 37,50 por parcela
+const MAX_INSTALLMENTS = 12;
+
 function CheckoutPage() {
   const cart = useCart();
   const navigate = useNavigate();
@@ -22,11 +26,29 @@ function CheckoutPage() {
   const [data, setData] = useState({
     name: "", email: "", cpf: "", phone: "",
     cep: "", street: "", number: "", city: "", state: "",
-    payment: "credito",
+    payment: "credito" as "credito" | "pix",
+    installments: 1,
   });
+
+  // Regras de negócio locais — calculadas em tempo real
+  const subtotal = cart.total;
+  const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
+  const totalFinal = subtotal - pixDiscount;
+
+  // Parcelamento inteligente: cada parcela >= R$ 37,50
+  const maxInstallments = useMemo(() => {
+    if (data.payment !== "credito" || subtotal <= 0) return 1;
+    const possible = Math.floor(subtotal / MIN_INSTALLMENT_VALUE);
+    return Math.max(1, Math.min(MAX_INSTALLMENTS, possible));
+  }, [data.payment, subtotal]);
+
+  // Se o usuário trocar para um total menor, ajustamos o número de parcelas
+  const currentInstallments = Math.min(data.installments, maxInstallments);
+  const installmentValue = totalFinal / currentInstallments;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Próxima etapa: disparo do webhook n8n com loading state.
     toast.success("Pedido recebido!", { description: "Você receberá um e-mail de confirmação." });
     cart.clear();
     navigate({ to: "/" });
@@ -89,19 +111,60 @@ function CheckoutPage() {
           )}
 
           {step === "pagamento" && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <h2 className="text-2xl font-serif">Pagamento</h2>
               <div className="space-y-2">
-                {[
-                  { v: "credito", l: "Cartão de crédito · 4x sem juros" },
-                  { v: "pix", l: "Pix · 5% de desconto" },
-                ].map((opt) => (
-                  <label key={opt.v} className="flex items-center gap-3 border border-border p-4 cursor-pointer hover:border-foreground">
-                    <input type="radio" name="pay" value={opt.v} checked={data.payment === opt.v} onChange={(e) => setData({ ...data, payment: e.target.value })} />
-                    <span>{opt.l}</span>
-                  </label>
-                ))}
+                <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="pay"
+                      value="credito"
+                      checked={data.payment === "credito"}
+                      onChange={() => setData({ ...data, payment: "credito", installments: 1 })}
+                    />
+                    <span>Cartão de crédito</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">até {maxInstallments}x sem juros</span>
+                </label>
+
+                <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="pay"
+                      value="pix"
+                      checked={data.payment === "pix"}
+                      onChange={() => setData({ ...data, payment: "pix" })}
+                    />
+                    <span>Pix</span>
+                  </div>
+                  <span className="text-xs text-cta font-medium">10% de desconto</span>
+                </label>
               </div>
+
+              {data.payment === "credito" && (
+                <div className="space-y-2">
+                  <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground">
+                    Parcelas
+                  </label>
+                  <select
+                    value={currentInstallments}
+                    onChange={(e) => setData({ ...data, installments: Number(e.target.value) })}
+                    className="w-full border border-border px-4 py-3 text-sm bg-background"
+                  >
+                    {Array.from({ length: maxInstallments }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n}x de {formatPrice(totalFinal / n)} sem juros
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Mínimo de {formatPrice(MIN_INSTALLMENT_VALUE)} por parcela.
+                  </p>
+                </div>
+              )}
+
               <button type="submit" className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition">
                 Confirmar pedido
               </button>
@@ -109,7 +172,7 @@ function CheckoutPage() {
           )}
         </form>
 
-        <aside className="bg-secondary/40 p-8 h-fit">
+        <aside className="bg-secondary/40 p-8 h-fit space-y-3">
           <h3 className="text-lg font-serif text-foreground">Seu pedido</h3>
           <ul className="mt-4 space-y-3 text-sm">
             {cart.items.map((it) => (
@@ -119,10 +182,26 @@ function CheckoutPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-6 pt-6 border-t border-border flex justify-between text-lg font-serif">
-            <span>Total</span><span>{formatPrice(cart.total)}</span>
+          <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            {pixDiscount > 0 && (
+              <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
+                <span>Desconto Pix (10%)</span>
+                <span>− {formatPrice(pixDiscount)}</span>
+              </div>
+            )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{formatInstallment(cart.total)}</p>
+          <div className="pt-3 border-t border-border flex justify-between text-lg font-serif">
+            <span>Total</span><span>{formatPrice(totalFinal)}</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {data.payment === "pix"
+              ? "À vista no Pix"
+              : `${currentInstallments}x de ${formatPrice(installmentValue)} sem juros`}
+          </p>
         </aside>
       </section>
     </PageShell>
