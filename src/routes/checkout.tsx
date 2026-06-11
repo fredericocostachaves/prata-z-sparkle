@@ -78,6 +78,49 @@ function CheckoutPage() {
   const currentInstallments = Math.min(data.installments, maxInstallments);
   const installmentValue = totalFinal / currentInstallments;
 
+  const isEmailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const onlyDigits = (v: string) => v.replace(/\D/g, "");
+
+  const validateDados = () => {
+    if (!data.name.trim() || data.name.trim().length < 3) return "Informe seu nome completo.";
+    if (!isEmailValid(data.email)) return "Informe um e-mail válido.";
+    if (onlyDigits(data.cpf).length !== 11) return "Informe um CPF válido (11 dígitos).";
+    if (onlyDigits(data.phone).length < 10) return "Informe um telefone válido com DDD.";
+    return null;
+  };
+
+  const validateEntrega = () => {
+    if (onlyDigits(data.cep).length !== 8) return "Informe um CEP válido (8 dígitos).";
+    if (!data.street.trim()) return "Informe a rua.";
+    if (!data.number.trim()) return "Informe o número.";
+    if (!data.neighborhood.trim()) return "Informe o bairro.";
+    if (!data.city.trim()) return "Informe a cidade.";
+    if (data.state.trim().length !== 2) return "Informe o estado (UF) com 2 letras.";
+    return null;
+  };
+
+  const goToEntrega = () => {
+    const err = validateDados();
+    if (err) { toast.error(err); return; }
+    setStep("entrega");
+  };
+
+  const goToPagamento = () => {
+    const err = validateEntrega();
+    if (err) { toast.error(err); return; }
+    setStep("pagamento");
+  };
+
+  const handleStepClick = (target: "dados" | "entrega" | "pagamento") => {
+    if (target === "dados") { setStep("dados"); return; }
+    const dadosErr = validateDados();
+    if (dadosErr) { toast.error(dadosErr); setStep("dados"); return; }
+    if (target === "entrega") { setStep("entrega"); return; }
+    const entregaErr = validateEntrega();
+    if (entregaErr) { toast.error(entregaErr); setStep("entrega"); return; }
+    setStep("pagamento");
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     // Próxima etapa: disparo do webhook n8n com loading state.
@@ -105,7 +148,7 @@ function CheckoutPage() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setStep(s)}
+                onClick={() => handleStepClick(s)}
                 className={`px-4 py-2 border ${step === s ? "border-foreground bg-foreground text-background" : "border-border"}`}
               >
                 {s}
@@ -122,7 +165,7 @@ function CheckoutPage() {
                 <input required placeholder="CPF" value={data.cpf} onChange={(e) => setData({ ...data, cpf: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
                 <input required placeholder="Telefone" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               </div>
-              <button type="button" onClick={() => setStep("entrega")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
+              <button type="button" onClick={goToEntrega} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
           )}
 
@@ -156,7 +199,7 @@ function CheckoutPage() {
                 <input required placeholder="Bairro" value={data.neighborhood} onChange={(e) => setData({ ...data, neighborhood: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
                 <input required placeholder="Estado (UF)" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value.toUpperCase() })} maxLength={2} className="w-full border border-border px-4 py-3 text-sm uppercase" />
               </div>
-              <button type="button" onClick={() => setStep("pagamento")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
+              <button type="button" onClick={goToPagamento} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
           )}
 
