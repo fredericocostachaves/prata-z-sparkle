@@ -78,6 +78,49 @@ function CheckoutPage() {
   const currentInstallments = Math.min(data.installments, maxInstallments);
   const installmentValue = totalFinal / currentInstallments;
 
+  const isEmailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const onlyDigits = (v: string) => v.replace(/\D/g, "");
+
+  const validateDados = () => {
+    if (!data.name.trim() || data.name.trim().length < 3) return "Informe seu nome completo.";
+    if (!isEmailValid(data.email)) return "Informe um e-mail válido.";
+    if (onlyDigits(data.cpf).length !== 11) return "Informe um CPF válido (11 dígitos).";
+    if (onlyDigits(data.phone).length < 10) return "Informe um telefone válido com DDD.";
+    return null;
+  };
+
+  const validateEntrega = () => {
+    if (onlyDigits(data.cep).length !== 8) return "Informe um CEP válido (8 dígitos).";
+    if (!data.street.trim()) return "Informe a rua.";
+    if (!data.number.trim()) return "Informe o número.";
+    if (!data.neighborhood.trim()) return "Informe o bairro.";
+    if (!data.city.trim()) return "Informe a cidade.";
+    if (data.state.trim().length !== 2) return "Informe o estado (UF) com 2 letras.";
+    return null;
+  };
+
+  const goToEntrega = () => {
+    const err = validateDados();
+    if (err) { toast.error(err); return; }
+    setStep("entrega");
+  };
+
+  const goToPagamento = () => {
+    const err = validateEntrega();
+    if (err) { toast.error(err); return; }
+    setStep("pagamento");
+  };
+
+  const handleStepClick = (target: "dados" | "entrega" | "pagamento") => {
+    if (target === "dados") { setStep("dados"); return; }
+    const dadosErr = validateDados();
+    if (dadosErr) { toast.error(dadosErr); setStep("dados"); return; }
+    if (target === "entrega") { setStep("entrega"); return; }
+    const entregaErr = validateEntrega();
+    if (entregaErr) { toast.error(entregaErr); setStep("entrega"); return; }
+    setStep("pagamento");
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     // Próxima etapa: disparo do webhook n8n com loading state.
