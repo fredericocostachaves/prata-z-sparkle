@@ -199,7 +199,7 @@ function CheckoutPage() {
                 <input required placeholder="Bairro" value={data.neighborhood} onChange={(e) => setData({ ...data, neighborhood: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
                 <input required placeholder="Estado (UF)" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value.toUpperCase() })} maxLength={2} className="w-full border border-border px-4 py-3 text-sm uppercase" />
               </div>
-              <button type="button" onClick={() => setStep("pagamento")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
+              <button type="button" onClick={goToPagamento} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
           )}
 
