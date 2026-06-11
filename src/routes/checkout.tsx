@@ -16,8 +16,13 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const PIX_DISCOUNT_RATE = 0.1; // 10%
-const MIN_INSTALLMENT_VALUE = 37.5; // R$ 37,50 por parcela
-const MAX_INSTALLMENTS = 5;
+
+function getMaxInstallmentsByTier(subtotal: number): number {
+  if (subtotal < 50) return 1;
+  if (subtotal <= 100) return 2;
+  if (subtotal <= 200) return 3;
+  return 4;
+}
 
 function CheckoutPage() {
   const cart = useCart();
@@ -63,11 +68,10 @@ function CheckoutPage() {
   const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
   const totalFinal = subtotal - pixDiscount;
 
-  // Parcelamento inteligente: cada parcela >= R$ 37,50
+  // Parcelamento por faixa de valor bruto
   const maxInstallments = useMemo(() => {
     if (data.payment !== "credito" || subtotal <= 0) return 1;
-    const possible = Math.floor(subtotal / MIN_INSTALLMENT_VALUE);
-    return Math.max(1, Math.min(MAX_INSTALLMENTS, possible));
+    return getMaxInstallmentsByTier(subtotal);
   }, [data.payment, subtotal]);
 
   // Se o usuário trocar para um total menor, ajustamos o número de parcelas
@@ -171,7 +175,9 @@ function CheckoutPage() {
                     />
                     <span>Cartão de crédito</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">até {maxInstallments}x sem juros</span>
+                  <span className="text-xs text-muted-foreground">
+                    {maxInstallments === 1 ? "à vista" : `até ${maxInstallments}x sem juros`}
+                  </span>
                 </label>
 
                 <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
@@ -189,7 +195,7 @@ function CheckoutPage() {
                 </label>
               </div>
 
-              {data.payment === "credito" && (
+              {data.payment === "credito" && maxInstallments > 1 && (
                 <div className="space-y-2">
                   <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground">
                     Parcelas
@@ -206,8 +212,31 @@ function CheckoutPage() {
                     ))}
                   </select>
                   <p className="text-[11px] text-muted-foreground">
-                    Mínimo de {formatPrice(MIN_INSTALLMENT_VALUE)} por parcela.
+                    Parcelamento disponível conforme o valor do pedido ({formatPrice(subtotal)}).
                   </p>
+                </div>
+              )}
+
+              {data.payment === "credito" && maxInstallments === 1 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Pedidos abaixo de {formatPrice(50)} são pagos somente à vista (1x).
+                </p>
+              )}
+
+              {data.payment === "pix" && (
+                <div className="border border-cta/30 bg-cta/5 p-4 text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Valor bruto</span>
+                    <span className="line-through">{formatPrice(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-cta font-medium">
+                    <span>Desconto Pix (10%)</span>
+                    <span>− {formatPrice(pixDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between font-serif text-base pt-2 border-t border-cta/20">
+                    <span>Total no Pix</span>
+                    <span>{formatPrice(totalFinal)}</span>
+                  </div>
                 </div>
               )}
 
