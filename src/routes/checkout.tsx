@@ -148,7 +148,7 @@ function CheckoutPage() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setStep(s)}
+                onClick={() => handleStepClick(s)}
                 className={`px-4 py-2 border ${step === s ? "border-foreground bg-foreground text-background" : "border-border"}`}
               >
                 {s}
