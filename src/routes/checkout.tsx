@@ -16,7 +16,7 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const PIX_DISCOUNT_RATE = 0.1; // 10%
-const MIN_INSTALLMENT_VALUE = 37.5; // R$ 37,50 por parcela
+
 function getMaxInstallmentsByTier(subtotal: number): number {
   if (subtotal < 50) return 1;
   if (subtotal <= 100) return 2;
