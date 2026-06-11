@@ -17,7 +17,7 @@ export const Route = createFileRoute("/checkout")({
 
 const PIX_DISCOUNT_RATE = 0.1; // 10%
 const MIN_INSTALLMENT_VALUE = 37.5; // R$ 37,50 por parcela
-const MAX_INSTALLMENTS = 12;
+const MAX_INSTALLMENTS = 5;
 
 function CheckoutPage() {
   const cart = useCart();
