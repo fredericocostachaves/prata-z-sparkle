@@ -126,13 +126,31 @@ function CheckoutPage() {
             <div className="space-y-4">
               <h2 className="text-2xl font-serif">Endereço de entrega</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                <input required placeholder="CEP" value={data.cep} onChange={(e) => setData({ ...data, cep: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <div className="relative">
+                  <input
+                    required
+                    placeholder="CEP"
+                    value={data.cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    inputMode="numeric"
+                    className="w-full border border-border px-4 py-3 text-sm"
+                  />
+                  {cepLoading && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      buscando…
+                    </span>
+                  )}
+                </div>
                 <input required placeholder="Cidade" value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               </div>
               <input required placeholder="Rua" value={data.street} onChange={(e) => setData({ ...data, street: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               <div className="grid sm:grid-cols-2 gap-4">
                 <input required placeholder="Número" value={data.number} onChange={(e) => setData({ ...data, number: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
-                <input required placeholder="Estado" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <input placeholder="Complemento (opcional)" value={data.complement} onChange={(e) => setData({ ...data, complement: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <input required placeholder="Bairro" value={data.neighborhood} onChange={(e) => setData({ ...data, neighborhood: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <input required placeholder="Estado (UF)" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value.toUpperCase() })} maxLength={2} className="w-full border border-border px-4 py-3 text-sm uppercase" />
               </div>
               <button type="button" onClick={() => setStep("pagamento")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
