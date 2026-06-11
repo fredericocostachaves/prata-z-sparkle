@@ -68,11 +68,10 @@ function CheckoutPage() {
   const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
   const totalFinal = subtotal - pixDiscount;
 
-  // Parcelamento inteligente: cada parcela >= R$ 37,50
+  // Parcelamento por faixa de valor bruto
   const maxInstallments = useMemo(() => {
     if (data.payment !== "credito" || subtotal <= 0) return 1;
-    const possible = Math.floor(subtotal / MIN_INSTALLMENT_VALUE);
-    return Math.max(1, Math.min(MAX_INSTALLMENTS, possible));
+    return getMaxInstallmentsByTier(subtotal);
   }, [data.payment, subtotal]);
 
   // Se o usuário trocar para um total menor, ajustamos o número de parcelas
