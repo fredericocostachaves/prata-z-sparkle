@@ -175,7 +175,9 @@ function CheckoutPage() {
                     />
                     <span>Cartão de crédito</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">até {maxInstallments}x sem juros</span>
+                  <span className="text-xs text-muted-foreground">
+                    {maxInstallments === 1 ? "à vista" : `até ${maxInstallments}x sem juros`}
+                  </span>
                 </label>
 
                 <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
