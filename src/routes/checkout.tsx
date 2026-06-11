@@ -25,10 +25,38 @@ function CheckoutPage() {
   const [step, setStep] = useState<"dados" | "entrega" | "pagamento">("dados");
   const [data, setData] = useState({
     name: "", email: "", cpf: "", phone: "",
-    cep: "", street: "", number: "", city: "", state: "",
+    cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "",
     payment: "credito" as "credito" | "pix",
     installments: 1,
   });
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const handleCepChange = async (raw: string) => {
+    const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
+    setData((d) => ({ ...d, cep: masked }));
+    const digits = masked.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const json = await res.json();
+      if (json.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        street: json.logradouro || d.street,
+        neighborhood: json.bairro || d.neighborhood,
+        city: json.localidade || d.city,
+        state: json.uf || d.state,
+      }));
+    } catch {
+      toast.error("Não foi possível consultar o CEP");
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
@@ -98,13 +126,31 @@ function CheckoutPage() {
             <div className="space-y-4">
               <h2 className="text-2xl font-serif">Endereço de entrega</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                <input required placeholder="CEP" value={data.cep} onChange={(e) => setData({ ...data, cep: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <div className="relative">
+                  <input
+                    required
+                    placeholder="CEP"
+                    value={data.cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    inputMode="numeric"
+                    className="w-full border border-border px-4 py-3 text-sm"
+                  />
+                  {cepLoading && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      buscando…
+                    </span>
+                  )}
+                </div>
                 <input required placeholder="Cidade" value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               </div>
               <input required placeholder="Rua" value={data.street} onChange={(e) => setData({ ...data, street: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               <div className="grid sm:grid-cols-2 gap-4">
                 <input required placeholder="Número" value={data.number} onChange={(e) => setData({ ...data, number: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
-                <input required placeholder="Estado" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <input placeholder="Complemento (opcional)" value={data.complement} onChange={(e) => setData({ ...data, complement: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <input required placeholder="Bairro" value={data.neighborhood} onChange={(e) => setData({ ...data, neighborhood: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
+                <input required placeholder="Estado (UF)" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value.toUpperCase() })} maxLength={2} className="w-full border border-border px-4 py-3 text-sm uppercase" />
               </div>
               <button type="button" onClick={() => setStep("pagamento")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
