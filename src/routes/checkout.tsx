@@ -165,7 +165,7 @@ function CheckoutPage() {
                 <input required placeholder="CPF" value={data.cpf} onChange={(e) => setData({ ...data, cpf: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
                 <input required placeholder="Telefone" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} className="w-full border border-border px-4 py-3 text-sm" />
               </div>
-              <button type="button" onClick={() => setStep("entrega")} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
+              <button type="button" onClick={goToEntrega} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
             </div>
           )}
 
