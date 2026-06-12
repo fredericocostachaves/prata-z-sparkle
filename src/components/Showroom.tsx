@@ -5,7 +5,7 @@ export function Showroom() {
   return (
     <section id="showroom" className="fluid-nude py-12 md:py-16">
       <div className="mx-auto max-w-7xl px-6 sm:px-10 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-        <div className="order-2 lg:order-1 reveal">
+        <div className="order-2 lg:order-1 reveal text-center lg:text-left">
           <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Showroom Prata Z</p>
           <h2 className="mt-5 text-4xl md:text-5xl text-foreground">
             Atendimento individual, <em className="font-serif italic">porque você merece um momento só seu</em>
