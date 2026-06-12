@@ -4,7 +4,7 @@ export function FloatingButtons() {
   return (
     <div className="fixed right-5 bottom-5 sm:right-7 sm:bottom-7 z-50 flex flex-col gap-4">
       <a
-        href="https://www.instagram.com/prata_z/"
+        href="https://www.instagram.com/pratazjoias?igsh=MXE1c3g3cWx0Z2lldQ=="
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Instagram"
