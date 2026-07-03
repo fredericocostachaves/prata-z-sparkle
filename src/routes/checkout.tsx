@@ -308,6 +308,23 @@ function CheckoutPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-6 pt-6 border-t border-border space-y-2">
+            <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
+              Código promocional
+            </label>
+            <input
+              type="text"
+              value={voucher}
+              onChange={(e) => setVoucher(e.target.value.toUpperCase())}
+              placeholder="Insira seu voucher"
+              className="w-full border border-border bg-background px-3 py-2 text-sm uppercase tracking-wide"
+            />
+            {hasVoucher && data.payment === "pix" && (
+              <p className="text-[11px] text-muted-foreground">
+                Desconto de 10% no Pix não aplicado com voucher.
+              </p>
+            )}
+          </div>
           <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
