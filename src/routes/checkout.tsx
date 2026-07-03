@@ -94,8 +94,11 @@ function CheckoutPage() {
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
-  const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
-  const totalFinal = subtotal - pixDiscount;
+  // Voucher tem precedência sobre o desconto de 10% à vista (Pix).
+  const voucherDiscount = appliedVoucher ? subtotal * appliedVoucher.rate : 0;
+  const pixDiscount =
+    !appliedVoucher && data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
+  const totalFinal = subtotal - voucherDiscount - pixDiscount;
 
   // Parcelamento por faixa de valor bruto
   const maxInstallments = useMemo(() => {
