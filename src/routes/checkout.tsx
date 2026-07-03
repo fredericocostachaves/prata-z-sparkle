@@ -42,6 +42,28 @@ function CheckoutPage() {
     installments: 1,
   });
   const [cepLoading, setCepLoading] = useState(false);
+  const [voucherInput, setVoucherInput] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; rate: number } | null>(null);
+
+  const applyVoucher = () => {
+    const code = voucherInput.trim().toUpperCase();
+    if (!code) {
+      toast.error("Informe um código promocional.");
+      return;
+    }
+    const rate = VALID_VOUCHERS[code];
+    if (!rate) {
+      toast.error("Código promocional inválido.");
+      return;
+    }
+    setAppliedVoucher({ code, rate });
+    toast.success(`Voucher aplicado: ${Math.round(rate * 100)}% de desconto.`);
+  };
+
+  const removeVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherInput("");
+  };
 
   const handleCepChange = async (raw: string) => {
     const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
