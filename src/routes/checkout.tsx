@@ -350,10 +350,17 @@ function CheckoutPage() {
                     <span className="text-muted-foreground">Valor bruto</span>
                     <span className="line-through">{formatPrice(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-cta font-medium">
-                    <span>Desconto Pix (10%)</span>
-                    <span>− {formatPrice(pixDiscount)}</span>
-                  </div>
+                  {appliedVoucher ? (
+                    <div className="flex justify-between text-cta font-medium">
+                      <span>Voucher {appliedVoucher.code} ({Math.round(appliedVoucher.rate * 100)}%)</span>
+                      <span>− {formatPrice(voucherDiscount)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-cta font-medium">
+                      <span>Desconto Pix (10%)</span>
+                      <span>− {formatPrice(pixDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-serif text-base pt-2 border-t border-cta/20">
                     <span>Total no Pix</span>
                     <span>{formatPrice(totalFinal)}</span>
