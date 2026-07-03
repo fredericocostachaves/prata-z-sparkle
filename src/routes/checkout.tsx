@@ -312,7 +312,7 @@ function CheckoutPage() {
                     />
                     <span>Pix</span>
                   </div>
-                  <span className="text-xs text-cta font-medium">10% de desconto</span>
+                  <span className={`text-xs font-medium ${appliedVoucher ? "text-muted-foreground line-through" : "text-cta"}`}>10% de desconto</span>
                 </label>
               </div>
 
