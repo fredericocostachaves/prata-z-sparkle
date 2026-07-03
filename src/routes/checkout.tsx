@@ -17,6 +17,13 @@ export const Route = createFileRoute("/checkout")({
 
 const PIX_DISCOUNT_RATE = 0.1; // 10%
 
+// Código promocional (voucher) — definido pelo desenvolvedor.
+// Ao aplicar um voucher válido, o desconto de 10% à vista (Pix ou crédito) NÃO é acumulado.
+const VALID_VOUCHERS: Record<string, number> = {
+  // código (case-insensitive) : taxa de desconto (0.15 = 15%)
+  PRATAZ15: 0.15,
+};
+
 function getMaxInstallmentsByTier(subtotal: number): number {
   if (subtotal < 50) return 1;
   if (subtotal <= 100) return 2;
@@ -35,6 +42,28 @@ function CheckoutPage() {
     installments: 1,
   });
   const [cepLoading, setCepLoading] = useState(false);
+  const [voucherInput, setVoucherInput] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; rate: number } | null>(null);
+
+  const applyVoucher = () => {
+    const code = voucherInput.trim().toUpperCase();
+    if (!code) {
+      toast.error("Informe um código promocional.");
+      return;
+    }
+    const rate = VALID_VOUCHERS[code];
+    if (!rate) {
+      toast.error("Código promocional inválido.");
+      return;
+    }
+    setAppliedVoucher({ code, rate });
+    toast.success(`Voucher aplicado: ${Math.round(rate * 100)}% de desconto.`);
+  };
+
+  const removeVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherInput("");
+  };
 
   const handleCepChange = async (raw: string) => {
     const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
@@ -65,8 +94,11 @@ function CheckoutPage() {
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
-  const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
-  const totalFinal = subtotal - pixDiscount;
+  // Voucher tem precedência sobre o desconto de 10% à vista (Pix).
+  const voucherDiscount = appliedVoucher ? subtotal * appliedVoucher.rate : 0;
+  const pixDiscount =
+    !appliedVoucher && data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
+  const totalFinal = subtotal - voucherDiscount - pixDiscount;
 
   // Parcelamento por faixa de valor bruto
   const maxInstallments = useMemo(() => {
@@ -206,6 +238,52 @@ function CheckoutPage() {
           {step === "pagamento" && (
             <div className="space-y-5">
               <h2 className="text-2xl font-serif">Pagamento</h2>
+
+              <div className="border border-border p-4 space-y-2">
+                <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
+                  Código promocional
+                </label>
+                {appliedVoucher ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm">
+                      <span className="font-medium">{appliedVoucher.code}</span>{" "}
+                      <span className="text-cta">
+                        · {Math.round(appliedVoucher.rate * 100)}% de desconto aplicado
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeVoucher}
+                      className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Digite seu voucher"
+                      value={voucherInput}
+                      onChange={(e) => setVoucherInput(e.target.value)}
+                      className="flex-1 border border-border px-4 py-3 text-sm uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyVoucher}
+                      className="bg-foreground text-background px-4 py-3 text-[11px] tracking-[0.2em] uppercase hover:bg-cta transition"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                )}
+                {appliedVoucher && (
+                  <p className="text-[11px] text-muted-foreground">
+                    O desconto de 10% à vista (Pix) não é acumulado com o voucher.
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
                   <div className="flex items-center gap-3">
@@ -234,7 +312,7 @@ function CheckoutPage() {
                     />
                     <span>Pix</span>
                   </div>
-                  <span className="text-xs text-cta font-medium">10% de desconto</span>
+                  <span className={`text-xs font-medium ${appliedVoucher ? "text-muted-foreground line-through" : "text-cta"}`}>10% de desconto</span>
                 </label>
               </div>
 
@@ -272,10 +350,17 @@ function CheckoutPage() {
                     <span className="text-muted-foreground">Valor bruto</span>
                     <span className="line-through">{formatPrice(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-cta font-medium">
-                    <span>Desconto Pix (10%)</span>
-                    <span>− {formatPrice(pixDiscount)}</span>
-                  </div>
+                  {appliedVoucher ? (
+                    <div className="flex justify-between text-cta font-medium">
+                      <span>Voucher {appliedVoucher.code} ({Math.round(appliedVoucher.rate * 100)}%)</span>
+                      <span>− {formatPrice(voucherDiscount)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-cta font-medium">
+                      <span>Desconto Pix (10%)</span>
+                      <span>− {formatPrice(pixDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-serif text-base pt-2 border-t border-cta/20">
                     <span>Total no Pix</span>
                     <span>{formatPrice(totalFinal)}</span>
@@ -305,6 +390,12 @@ function CheckoutPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {voucherDiscount > 0 && (
+              <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
+                <span>Voucher {appliedVoucher?.code} ({Math.round((appliedVoucher?.rate ?? 0) * 100)}%)</span>
+                <span>− {formatPrice(voucherDiscount)}</span>
+              </div>
+            )}
             {pixDiscount > 0 && (
               <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
                 <span>Desconto Pix (10%)</span>
