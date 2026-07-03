@@ -268,7 +268,7 @@ function CheckoutPage() {
                 </p>
               )}
 
-              {data.payment === "pix" && (
+              {data.payment === "pix" && !hasVoucher && (
                 <div className="border border-cta/30 bg-cta/5 p-4 text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Valor bruto</span>
@@ -283,6 +283,12 @@ function CheckoutPage() {
                     <span>{formatPrice(totalFinal)}</span>
                   </div>
                 </div>
+              )}
+
+              {data.payment === "pix" && hasVoucher && (
+                <p className="text-[11px] text-muted-foreground">
+                  O desconto de 10% no Pix não é cumulativo com código promocional.
+                </p>
               )}
 
               <button type="submit" className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition">
