@@ -67,7 +67,7 @@ function CheckoutPage() {
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
-  const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
+  const pixDiscount = data.payment === "pix" && !hasVoucher ? subtotal * PIX_DISCOUNT_RATE : 0;
   const totalFinal = subtotal - pixDiscount;
 
   // Parcelamento por faixa de valor bruto
