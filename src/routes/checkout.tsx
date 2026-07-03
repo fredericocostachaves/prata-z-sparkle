@@ -35,6 +35,8 @@ function CheckoutPage() {
     installments: 1,
   });
   const [cepLoading, setCepLoading] = useState(false);
+  const [voucher, setVoucher] = useState("");
+  const hasVoucher = voucher.trim().length > 0;
 
   const handleCepChange = async (raw: string) => {
     const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
@@ -65,7 +67,7 @@ function CheckoutPage() {
 
   // Regras de negócio locais — calculadas em tempo real
   const subtotal = cart.total;
-  const pixDiscount = data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
+  const pixDiscount = data.payment === "pix" && !hasVoucher ? subtotal * PIX_DISCOUNT_RATE : 0;
   const totalFinal = subtotal - pixDiscount;
 
   // Parcelamento por faixa de valor bruto
@@ -266,7 +268,7 @@ function CheckoutPage() {
                 </p>
               )}
 
-              {data.payment === "pix" && (
+              {data.payment === "pix" && !hasVoucher && (
                 <div className="border border-cta/30 bg-cta/5 p-4 text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Valor bruto</span>
@@ -281,6 +283,12 @@ function CheckoutPage() {
                     <span>{formatPrice(totalFinal)}</span>
                   </div>
                 </div>
+              )}
+
+              {data.payment === "pix" && hasVoucher && (
+                <p className="text-[11px] text-muted-foreground">
+                  O desconto de 10% no Pix não é cumulativo com código promocional.
+                </p>
               )}
 
               <button type="submit" className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition">
@@ -300,6 +308,23 @@ function CheckoutPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-6 pt-6 border-t border-border space-y-2">
+            <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
+              Código promocional
+            </label>
+            <input
+              type="text"
+              value={voucher}
+              onChange={(e) => setVoucher(e.target.value.toUpperCase())}
+              placeholder="Insira seu voucher"
+              className="w-full border border-border bg-background px-3 py-2 text-sm uppercase tracking-wide"
+            />
+            {hasVoucher && data.payment === "pix" && (
+              <p className="text-[11px] text-muted-foreground">
+                Desconto de 10% no Pix não aplicado com voucher.
+              </p>
+            )}
+          </div>
           <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
