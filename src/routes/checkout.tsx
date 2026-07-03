@@ -35,6 +35,8 @@ function CheckoutPage() {
     installments: 1,
   });
   const [cepLoading, setCepLoading] = useState(false);
+  const [voucher, setVoucher] = useState("");
+  const hasVoucher = voucher.trim().length > 0;
 
   const handleCepChange = async (raw: string) => {
     const masked = raw.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
