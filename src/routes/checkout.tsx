@@ -238,6 +238,52 @@ function CheckoutPage() {
           {step === "pagamento" && (
             <div className="space-y-5">
               <h2 className="text-2xl font-serif">Pagamento</h2>
+
+              <div className="border border-border p-4 space-y-2">
+                <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
+                  Código promocional
+                </label>
+                {appliedVoucher ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm">
+                      <span className="font-medium">{appliedVoucher.code}</span>{" "}
+                      <span className="text-cta">
+                        · {Math.round(appliedVoucher.rate * 100)}% de desconto aplicado
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeVoucher}
+                      className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Digite seu voucher"
+                      value={voucherInput}
+                      onChange={(e) => setVoucherInput(e.target.value)}
+                      className="flex-1 border border-border px-4 py-3 text-sm uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyVoucher}
+                      className="bg-foreground text-background px-4 py-3 text-[11px] tracking-[0.2em] uppercase hover:bg-cta transition"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                )}
+                {appliedVoucher && (
+                  <p className="text-[11px] text-muted-foreground">
+                    O desconto de 10% à vista (Pix) não é acumulado com o voucher.
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <label className="flex items-center justify-between gap-3 border border-border p-4 cursor-pointer hover:border-foreground transition">
                   <div className="flex items-center gap-3">
