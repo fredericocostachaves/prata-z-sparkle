@@ -17,6 +17,13 @@ export const Route = createFileRoute("/checkout")({
 
 const PIX_DISCOUNT_RATE = 0.1; // 10%
 
+// Código promocional (voucher) — definido pelo desenvolvedor.
+// Ao aplicar um voucher válido, o desconto de 10% à vista (Pix ou crédito) NÃO é acumulado.
+const VALID_VOUCHERS: Record<string, number> = {
+  // código (case-insensitive) : taxa de desconto (0.15 = 15%)
+  PRATAZ15: 0.15,
+};
+
 function getMaxInstallmentsByTier(subtotal: number): number {
   if (subtotal < 50) return 1;
   if (subtotal <= 100) return 2;
