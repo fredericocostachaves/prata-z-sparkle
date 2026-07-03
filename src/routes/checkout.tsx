@@ -390,6 +390,12 @@ function CheckoutPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {voucherDiscount > 0 && (
+              <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
+                <span>Voucher {appliedVoucher?.code} ({Math.round((appliedVoucher?.rate ?? 0) * 100)}%)</span>
+                <span>− {formatPrice(voucherDiscount)}</span>
+              </div>
+            )}
             {pixDiscount > 0 && (
               <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
                 <span>Desconto Pix (10%)</span>
