@@ -1,0 +1,310 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function ensureStaff(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+  const { data: isStaff } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "staff" });
+  if (!isAdmin && !isStaff) throw new Error("Acesso negado — somente admin/staff.");
+  return { isAdmin: !!isAdmin };
+}
+
+// ============ ROLE CHECK ============
+export const getMyRole = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data: isStaff } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "staff" });
+    return { isAdmin: !!isAdmin, isStaff: !!isStaff };
+  });
+
+// ============ DASHBOARD ============
+export const getDashboard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const startMonth = new Date();
+    startMonth.setDate(1); startMonth.setHours(0, 0, 0, 0);
+
+    const [pedidosMes, todosClientes, topProdutos, pagamentos, evolucao] = await Promise.all([
+      context.supabase.from("pedidos").select("valor_total, metodo_pagamento, status_pagamento, data_compra").gte("data_compra", startMonth.toISOString()),
+      context.supabase.from("clientes").select("id", { count: "exact", head: true }),
+      context.supabase.from("itens_pedido").select("produto_id, quantidade, produtos(nome, sku)").limit(500),
+      context.supabase.from("pedidos").select("metodo_pagamento, valor_total").eq("status_pagamento", "pago"),
+      context.supabase.from("pedidos").select("data_compra, valor_total").eq("status_pagamento", "pago").gte("data_compra", new Date(Date.now() - 30 * 86400000).toISOString()),
+    ]);
+
+    const pagos = (pedidosMes.data ?? []).filter((p: any) => p.status_pagamento === "pago");
+    const faturamento = pagos.reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+    const ticketMedio = pagos.length ? faturamento / pagos.length : 0;
+
+    // Top produtos
+    const map = new Map<string, { nome: string; sku: string; qty: number }>();
+    for (const it of topProdutos.data ?? []) {
+      const key = it.produto_id;
+      const cur = map.get(key) ?? { nome: it.produtos?.nome ?? "-", sku: it.produtos?.sku ?? "", qty: 0 };
+      cur.qty += it.quantidade;
+      map.set(key, cur);
+    }
+    const top5 = [...map.values()].sort((a, b) => b.qty - a.qty).slice(0, 5);
+
+    // Pagamentos
+    const pixTotal = (pagamentos.data ?? []).filter((p: any) => p.metodo_pagamento === "pix").reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+    const cartaoTotal = (pagamentos.data ?? []).filter((p: any) => p.metodo_pagamento === "cartao").reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+
+    // Evolução por dia
+    const evoMap = new Map<string, number>();
+    for (const p of evolucao.data ?? []) {
+      const d = new Date(p.data_compra).toISOString().slice(0, 10);
+      evoMap.set(d, (evoMap.get(d) ?? 0) + Number(p.valor_total));
+    }
+    const evolucaoDiaria = [...evoMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([data, total]) => ({ data, total }));
+
+    return {
+      kpi: {
+        faturamentoMes: faturamento,
+        ticketMedio,
+        pedidosPagosMes: pagos.length,
+        totalClientes: todosClientes.count ?? 0,
+      },
+      pagamentos: [
+        { name: "PIX", value: pixTotal },
+        { name: "Cartão", value: cartaoTotal },
+      ],
+      topProdutos: top5,
+      evolucaoDiaria,
+    };
+  });
+
+// ============ CRUD PRODUTOS ============
+export const listProdutos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { data, error } = await context.supabase.from("produtos").select("*, fornecedores(razao_social)").order("nome");
+    if (error) throw error;
+    return data;
+  });
+
+const produtoSchema = z.object({
+  id: z.string().optional(),
+  sku: z.string().min(1),
+  nome: z.string().min(1),
+  descricao: z.string().optional().nullable(),
+  preco_custo: z.number().min(0),
+  preco_venda: z.number().min(0),
+  estoque_atual: z.number().int().min(0),
+  estoque_minimo: z.number().int().min(0),
+  fornecedor_id: z.string().uuid().optional().nullable(),
+  peso_g: z.number().optional().nullable(),
+  altura_cm: z.number().optional().nullable(),
+  largura_cm: z.number().optional().nullable(),
+  comprimento_cm: z.number().optional().nullable(),
+});
+
+export const upsertProduto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => produtoSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { id, ...rest } = data;
+    if (id) {
+      const { error } = await context.supabase.from("produtos").update(rest).eq("id", id);
+      if (error) throw error;
+    } else {
+      const { error } = await context.supabase.from("produtos").insert(rest);
+      if (error) throw error;
+    }
+    return { ok: true };
+  });
+
+export const deleteProduto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { error } = await context.supabase.from("produtos").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============ CRUD FORNECEDORES ============
+export const listFornecedores = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { data, error } = await context.supabase.from("fornecedores").select("*").order("razao_social");
+    if (error) throw error;
+    return data;
+  });
+
+const fornecedorSchema = z.object({
+  id: z.string().optional(),
+  razao_social: z.string().min(1),
+  cnpj: z.string().optional().nullable(),
+  email: z.string().email().optional().or(z.literal("")).nullable(),
+  telefone: z.string().optional().nullable(),
+  endereco: z.string().optional().nullable(),
+});
+
+export const upsertFornecedor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => fornecedorSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { id, ...rest } = data;
+    if (id) {
+      const { error } = await context.supabase.from("fornecedores").update(rest).eq("id", id);
+      if (error) throw error;
+    } else {
+      const { error } = await context.supabase.from("fornecedores").insert(rest);
+      if (error) throw error;
+    }
+    return { ok: true };
+  });
+
+export const deleteFornecedor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { error } = await context.supabase.from("fornecedores").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============ CLIENTES / CRM ============
+export const listClientes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { data, error } = await context.supabase.from("clientes").select("*").order("nome_completo");
+    if (error) throw error;
+    return data;
+  });
+
+export const getClienteDetalhe = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { data: cliente, error: e1 } = await context.supabase.from("clientes").select("*").eq("id", data.id).maybeSingle();
+    if (e1) throw e1;
+    const { data: pedidos, error: e2 } = await context.supabase.from("pedidos").select("*").eq("cliente_id", data.id).order("data_compra", { ascending: false });
+    if (e2) throw e2;
+    const pagos = (pedidos ?? []).filter((p: any) => p.status_pagamento === "pago");
+    const ltv = pagos.reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+    const ultimaCompra = pagos[0]?.data_compra ?? null;
+    return { cliente, pedidos, ltv, ultimaCompra };
+  });
+
+// ============ PEDIDOS ============
+export const listPedidos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { data, error } = await context.supabase
+      .from("pedidos")
+      .select("*, clientes(nome_completo, email)")
+      .order("data_compra", { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data;
+  });
+
+export const getPedidoDetalhe = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { data: pedido, error } = await context.supabase
+      .from("pedidos")
+      .select("*, clientes(*), itens_pedido(*, produtos(nome, sku, peso_g, altura_cm, largura_cm, comprimento_cm))")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    return pedido;
+  });
+
+export const updatePedidoStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      status_pagamento: z.enum(["pendente", "pago", "cancelado"]).optional(),
+      status_logistica: z.enum(["aguardando_envio", "etiqueta_gerada", "enviado", "entregue"]).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { id, ...rest } = data;
+    const { error } = await context.supabase.from("pedidos").update(rest).eq("id", id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============ SUPERFRETE (stubs prontos para produção) ============
+export const calcularFrete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      pedido_id: z.string().uuid(),
+      cep_destino: z.string().min(8),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const token = process.env.SUPERFRETE_TOKEN;
+    if (!token) throw new Error("SUPERFRETE_TOKEN não configurado.");
+
+    // Soma dimensões/peso dos itens
+    const { data: itens } = await context.supabase
+      .from("itens_pedido")
+      .select("quantidade, produtos(peso_g, altura_cm, largura_cm, comprimento_cm)")
+      .eq("pedido_id", data.pedido_id);
+
+    let pesoKg = 0, altura = 2, largura = 11, comprimento = 16;
+    for (const it of (itens ?? []) as any[]) {
+      pesoKg += ((it.produtos?.peso_g ?? 0) * it.quantidade) / 1000;
+      altura = Math.max(altura, it.produtos?.altura_cm ?? 0);
+      largura = Math.max(largura, it.produtos?.largura_cm ?? 0);
+      comprimento = Math.max(comprimento, it.produtos?.comprimento_cm ?? 0);
+    }
+
+    const res = await fetch("https://api.superfrete.com/api/v0/calculator", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "PrataZ (contato@pratazjoias.com.br)",
+      },
+      body: JSON.stringify({
+        from: { postal_code: "01310100" }, // TODO: CEP de origem da loja
+        to: { postal_code: data.cep_destino.replace(/\D/g, "") },
+        services: "1,2,17",
+        package: { height: altura || 2, width: largura || 11, length: comprimento || 16, weight: pesoKg || 0.3 },
+      }),
+    });
+    const body = await res.text();
+    if (!res.ok) throw new Error(`SuperFrete ${res.status}: ${body}`);
+    return JSON.parse(body);
+  });
+
+export const gerarEtiqueta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ pedido_id: z.string().uuid(), service_id: z.number() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const token = process.env.SUPERFRETE_TOKEN;
+    if (!token) throw new Error("SUPERFRETE_TOKEN não configurado.");
+    // TODO: integração completa (checkout/generate) — depende dos dados do remetente na conta.
+    // Aqui deixamos o hook + persistência.
+    const tracking = `SF${Date.now()}`;
+    const { error } = await context.supabase
+      .from("pedidos")
+      .update({ tracking_code: tracking, status_logistica: "etiqueta_gerada" })
+      .eq("id", data.pedido_id);
+    if (error) throw error;
+    return { tracking_code: tracking, service_id: data.service_id };
+  });
