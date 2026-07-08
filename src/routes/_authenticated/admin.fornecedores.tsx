@@ -17,7 +17,7 @@ function Page() {
   const del = useServerFn(deleteFornecedor);
 
   const load = () => list().then(setRows).catch((e) => toast.error(e.message));
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const onSave = async (form: any) => {
     try { await save({ data: form }); toast.success("Fornecedor salvo"); setEditing(null); load(); }

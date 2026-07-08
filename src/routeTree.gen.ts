@@ -26,6 +26,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as BuscaRouteImport } from './routes/busca'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AutenticidadeRouteImport } from './routes/autenticidade'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
@@ -33,6 +34,14 @@ import { Route as ContaEnderecosRouteImport } from './routes/conta.enderecos'
 import { Route as ContaDadosRouteImport } from './routes/conta.dados'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
+import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
+import { Route as AuthenticatedAdminFornecedoresRouteImport } from './routes/_authenticated/admin.fornecedores'
+import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
+import { Route as AuthenticatedAdminPedidosIdRouteImport } from './routes/_authenticated/admin.pedidos.$id'
+import { Route as AuthenticatedAdminClientesIdRouteImport } from './routes/_authenticated/admin.clientes.$id'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -119,6 +128,10 @@ const AutenticidadeRoute = AutenticidadeRouteImport.update({
   path: '/autenticidade',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -154,6 +167,52 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminProdutosRoute =
+  AuthenticatedAdminProdutosRouteImport.update({
+    id: '/produtos',
+    path: '/produtos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPedidosRoute =
+  AuthenticatedAdminPedidosRouteImport.update({
+    id: '/pedidos',
+    path: '/pedidos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFornecedoresRoute =
+  AuthenticatedAdminFornecedoresRouteImport.update({
+    id: '/fornecedores',
+    path: '/fornecedores',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminClientesRoute =
+  AuthenticatedAdminClientesRouteImport.update({
+    id: '/clientes',
+    path: '/clientes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPedidosIdRoute =
+  AuthenticatedAdminPedidosIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminPedidosRoute,
+  } as any)
+const AuthenticatedAdminClientesIdRoute =
+  AuthenticatedAdminClientesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminClientesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -174,12 +233,20 @@ export interface FileRoutesByFullPath {
   '/showroom': typeof ShowroomRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/conta/dados': typeof ContaDadosRoute
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
+  '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
+  '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -206,10 +273,18 @@ export interface FileRoutesByTo {
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
+  '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
+  '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
@@ -227,12 +302,20 @@ export interface FileRoutesById {
   '/showroom': typeof ShowroomRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/conta/dados': typeof ContaDadosRoute
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/_authenticated/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
+  '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
+  '/_authenticated/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -255,12 +338,20 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sobre'
     | '/termos'
+    | '/admin'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/conta/dados'
     | '/conta/enderecos'
     | '/conta/pedidos'
     | '/produto/$slug'
+    | '/admin/clientes'
+    | '/admin/fornecedores'
+    | '/admin/pedidos'
+    | '/admin/produtos'
+    | '/admin/'
+    | '/admin/clientes/$id'
+    | '/admin/pedidos/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -287,9 +378,17 @@ export interface FileRouteTypes {
     | '/conta/enderecos'
     | '/conta/pedidos'
     | '/produto/$slug'
+    | '/admin/clientes'
+    | '/admin/fornecedores'
+    | '/admin/pedidos'
+    | '/admin/produtos'
+    | '/admin'
+    | '/admin/clientes/$id'
+    | '/admin/pedidos/$id'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/autenticidade'
     | '/blog'
     | '/busca'
@@ -307,16 +406,25 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sobre'
     | '/termos'
+    | '/_authenticated/admin'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/conta/dados'
     | '/conta/enderecos'
     | '/conta/pedidos'
     | '/produto/$slug'
+    | '/_authenticated/admin/clientes'
+    | '/_authenticated/admin/fornecedores'
+    | '/_authenticated/admin/pedidos'
+    | '/_authenticated/admin/produtos'
+    | '/_authenticated/admin/'
+    | '/_authenticated/admin/clientes/$id'
+    | '/_authenticated/admin/pedidos/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AutenticidadeRoute: typeof AutenticidadeRoute
   BlogRoute: typeof BlogRouteWithChildren
   BuscaRoute: typeof BuscaRoute
@@ -459,6 +567,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AutenticidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -508,8 +623,122 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/produtos': {
+      id: '/_authenticated/admin/produtos'
+      path: '/produtos'
+      fullPath: '/admin/produtos'
+      preLoaderRoute: typeof AuthenticatedAdminProdutosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pedidos': {
+      id: '/_authenticated/admin/pedidos'
+      path: '/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/fornecedores': {
+      id: '/_authenticated/admin/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/admin/fornecedores'
+      preLoaderRoute: typeof AuthenticatedAdminFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/clientes': {
+      id: '/_authenticated/admin/clientes'
+      path: '/clientes'
+      fullPath: '/admin/clientes'
+      preLoaderRoute: typeof AuthenticatedAdminClientesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pedidos/$id': {
+      id: '/_authenticated/admin/pedidos/$id'
+      path: '/$id'
+      fullPath: '/admin/pedidos/$id'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosIdRouteImport
+      parentRoute: typeof AuthenticatedAdminPedidosRoute
+    }
+    '/_authenticated/admin/clientes/$id': {
+      id: '/_authenticated/admin/clientes/$id'
+      path: '/$id'
+      fullPath: '/admin/clientes/$id'
+      preLoaderRoute: typeof AuthenticatedAdminClientesIdRouteImport
+      parentRoute: typeof AuthenticatedAdminClientesRoute
+    }
   }
 }
+
+interface AuthenticatedAdminClientesRouteChildren {
+  AuthenticatedAdminClientesIdRoute: typeof AuthenticatedAdminClientesIdRoute
+}
+
+const AuthenticatedAdminClientesRouteChildren: AuthenticatedAdminClientesRouteChildren =
+  {
+    AuthenticatedAdminClientesIdRoute: AuthenticatedAdminClientesIdRoute,
+  }
+
+const AuthenticatedAdminClientesRouteWithChildren =
+  AuthenticatedAdminClientesRoute._addFileChildren(
+    AuthenticatedAdminClientesRouteChildren,
+  )
+
+interface AuthenticatedAdminPedidosRouteChildren {
+  AuthenticatedAdminPedidosIdRoute: typeof AuthenticatedAdminPedidosIdRoute
+}
+
+const AuthenticatedAdminPedidosRouteChildren: AuthenticatedAdminPedidosRouteChildren =
+  {
+    AuthenticatedAdminPedidosIdRoute: AuthenticatedAdminPedidosIdRoute,
+  }
+
+const AuthenticatedAdminPedidosRouteWithChildren =
+  AuthenticatedAdminPedidosRoute._addFileChildren(
+    AuthenticatedAdminPedidosRouteChildren,
+  )
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRouteWithChildren
+  AuthenticatedAdminFornecedoresRoute: typeof AuthenticatedAdminFornecedoresRoute
+  AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRouteWithChildren
+  AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRouteWithChildren,
+  AuthenticatedAdminFornecedoresRoute: AuthenticatedAdminFornecedoresRoute,
+  AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRouteWithChildren,
+  AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface BlogRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
@@ -537,6 +766,7 @@ const ContaRouteWithChildren = ContaRoute._addFileChildren(ContaRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AutenticidadeRoute: AutenticidadeRoute,
   BlogRoute: BlogRouteWithChildren,
   BuscaRoute: BuscaRoute,

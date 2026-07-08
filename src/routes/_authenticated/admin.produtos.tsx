@@ -25,7 +25,7 @@ function ProdutosPage() {
     list().then(setRows).catch((e) => toast.error(e.message));
     listF().then(setFornecedores).catch(() => {});
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const onSave = async (form: any) => {
     try {
