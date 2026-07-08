@@ -14,16 +14,335 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          auth_user_id: string | null
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome_completo: string
+          notas: string | null
+          numero: string | null
+          rua: string | null
+          tags: string[] | null
+          telefone: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo: string
+          notas?: string | null
+          numero?: string | null
+          rua?: string | null
+          tags?: string[] | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string
+          notas?: string | null
+          numero?: string | null
+          rua?: string | null
+          tags?: string[] | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          razao_social: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          razao_social: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          razao_social?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      itens_pedido: {
+        Row: {
+          created_at: string
+          id: string
+          pedido_id: string
+          preco_unitario: number
+          produto_id: string
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pedido_id: string
+          preco_unitario: number
+          produto_id: string
+          quantidade: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pedido_id?: string
+          preco_unitario?: number
+          produto_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_pedido_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_pedido_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_compra: string
+          etiqueta_url: string | null
+          id: string
+          metodo_pagamento: Database["public"]["Enums"]["metodo_pagamento"]
+          numero: number
+          observacoes: string | null
+          status_logistica: Database["public"]["Enums"]["status_logistica"]
+          status_pagamento: Database["public"]["Enums"]["status_pagamento"]
+          subtotal: number
+          tracking_code: string | null
+          updated_at: string
+          valor_frete: number
+          valor_total: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_compra?: string
+          etiqueta_url?: string | null
+          id?: string
+          metodo_pagamento: Database["public"]["Enums"]["metodo_pagamento"]
+          numero?: number
+          observacoes?: string | null
+          status_logistica?: Database["public"]["Enums"]["status_logistica"]
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          subtotal?: number
+          tracking_code?: string | null
+          updated_at?: string
+          valor_frete?: number
+          valor_total?: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_compra?: string
+          etiqueta_url?: string | null
+          id?: string
+          metodo_pagamento?: Database["public"]["Enums"]["metodo_pagamento"]
+          numero?: number
+          observacoes?: string | null
+          status_logistica?: Database["public"]["Enums"]["status_logistica"]
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          subtotal?: number
+          tracking_code?: string | null
+          updated_at?: string
+          valor_frete?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          altura_cm: number | null
+          ativo: boolean
+          comprimento_cm: number | null
+          created_at: string
+          descricao: string | null
+          estoque_atual: number
+          estoque_minimo: number
+          fornecedor_id: string | null
+          id: string
+          largura_cm: number | null
+          nome: string
+          peso_g: number | null
+          preco_custo: number
+          preco_venda: number
+          sku: string
+          updated_at: string
+        }
+        Insert: {
+          altura_cm?: number | null
+          ativo?: boolean
+          comprimento_cm?: number | null
+          created_at?: string
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          largura_cm?: number | null
+          nome: string
+          peso_g?: number | null
+          preco_custo?: number
+          preco_venda?: number
+          sku: string
+          updated_at?: string
+        }
+        Update: {
+          altura_cm?: number | null
+          ativo?: boolean
+          comprimento_cm?: number | null
+          created_at?: string
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          largura_cm?: number | null
+          nome?: string
+          peso_g?: number | null
+          preco_custo?: number
+          preco_venda?: number
+          sku?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff" | "cliente"
+      metodo_pagamento: "pix" | "cartao"
+      status_logistica:
+        | "aguardando_envio"
+        | "etiqueta_gerada"
+        | "enviado"
+        | "entregue"
+      status_pagamento: "pendente" | "pago" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +469,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff", "cliente"],
+      metodo_pagamento: ["pix", "cartao"],
+      status_logistica: [
+        "aguardando_envio",
+        "etiqueta_gerada",
+        "enviado",
+        "entregue",
+      ],
+      status_pagamento: ["pendente", "pago", "cancelado"],
+    },
   },
 } as const
