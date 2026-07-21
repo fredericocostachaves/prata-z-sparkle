@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Joias em prata 925 com garantia, parcelamento em 4x sem juros e experiência exclusiva de compra.",
+          "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil.",
       },
       { property: "og:type", content: "website" },
     ],
