@@ -128,6 +128,45 @@ export const deleteProduto = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const syncProdutoBling = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ produto_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+
+    const { bling } = await import("./integrations/bling.server");
+
+    const { data: produto, error } = await context.supabase
+      .from("produtos")
+      .select("*")
+      .eq("id", data.produto_id)
+      .single();
+
+    if (error || !produto) throw new Error("Produto não encontrado.");
+
+    const existing = await bling.searchProduct(produto.sku);
+
+    const payload = {
+      codigo: produto.sku,
+      nome: produto.nome,
+      preco: Number(produto.preco_venda),
+      tipo: "P",
+      situacao: "Ativo",
+      estoque: {
+        saldo: produto.estoque_atual,
+      },
+    };
+
+    let result;
+    if (existing) {
+      result = await bling.updateProduct(existing.id, payload);
+    } else {
+      result = await bling.createProduct(payload);
+    }
+
+    return { ok: true, bling_id: result?.data?.id ?? existing?.id, action: existing ? "atualizado" : "criado" };
+  });
+
 // ============ CRUD FORNECEDORES ============
 export const listFornecedores = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

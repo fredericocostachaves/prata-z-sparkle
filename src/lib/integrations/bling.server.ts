@@ -123,6 +123,53 @@ class BlingClient {
       },
     });
   }
+
+  async createProduct(product: {
+    codigo: string;
+    nome: string;
+    preco: number;
+    tipo?: string;
+    situacao?: string;
+    estoque?: {
+      saldo?: number;
+    };
+  }) {
+    return this.request('/produtos', {
+      method: 'POST',
+      body: JSON.stringify(product),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async updateProduct(blingId: number, product: {
+    codigo?: string;
+    nome?: string;
+    preco?: number;
+    estoque?: {
+      saldo?: number;
+    };
+  }) {
+    return this.request(`/produtos/${blingId}`, {
+      method: 'PUT',
+      body: JSON.stringify(product),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async searchProduct(codigo: string): Promise<BlingProduct | null> {
+    try {
+      const data = await this.request<{ data: BlingProduct[] }>(
+        `/produtos?codigo=${encodeURIComponent(codigo)}`
+      );
+      return data.data?.[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 let _bling: BlingClient | undefined;
