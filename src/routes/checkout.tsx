@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
+import { calculateShipping, createPaymentSession, finalizeOrder } from "@/lib/server-functions";
+import type { SuperFreteOption } from "@/lib/integrations/superfrete.server";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -42,6 +44,9 @@ function CheckoutPage() {
     installments: 1,
   });
   const [cepLoading, setCepLoading] = useState(false);
+  const [shippingOptions, setShippingOptions] = useState<SuperFreteOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<SuperFreteOption | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; rate: number } | null>(null);
 
@@ -85,6 +90,20 @@ function CheckoutPage() {
         city: json.localidade || d.city,
         state: json.uf || d.state,
       }));
+
+      // Calcular frete automaticamente
+      const totalWeight = cart.items.reduce((acc, it) => acc + (0.05 * it.qty), 0); // Mock weight 50g per item
+      const options = await calculateShipping({
+        data: {
+          cepDestino: digits,
+          pesoKg: Math.max(0.1, totalWeight),
+          alturaCm: 10,
+          larguraCm: 15,
+          comprimentoCm: 20
+        }
+      });
+      setShippingOptions(options);
+      if (options.length > 0) setSelectedShipping(options[0]);
     } catch {
       toast.error("Não foi possível consultar o CEP");
     } finally {
@@ -96,9 +115,10 @@ function CheckoutPage() {
   const subtotal = cart.total;
   // Voucher tem precedência sobre o desconto de 10% à vista (Pix).
   const voucherDiscount = appliedVoucher ? subtotal * appliedVoucher.rate : 0;
+  const shippingCost = selectedShipping?.price || 0;
   const pixDiscount =
-    !appliedVoucher && data.payment === "pix" ? subtotal * PIX_DISCOUNT_RATE : 0;
-  const totalFinal = subtotal - voucherDiscount - pixDiscount;
+    !appliedVoucher && data.payment === "pix" ? (subtotal + shippingCost) * PIX_DISCOUNT_RATE : 0;
+  const totalFinal = subtotal + shippingCost - voucherDiscount - pixDiscount;
 
   // Parcelamento por faixa de valor bruto
   const maxInstallments = useMemo(() => {
@@ -153,12 +173,72 @@ function CheckoutPage() {
     setStep("pagamento");
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Próxima etapa: disparo do webhook n8n com loading state.
-    toast.success("Pedido recebido!", { description: "Você receberá um e-mail de confirmação." });
-    cart.clear();
-    navigate({ to: "/" });
+    if (step !== "pagamento") {
+      if (step === "dados") goToEntrega();
+      else goToPagamento();
+      return;
+    }
+
+    if (!selectedShipping) {
+      toast.error("Por favor, selecione uma opção de frete.");
+      setStep("entrega");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Finalizar pedido no backend (Supabase + Bling)
+      const order = await finalizeOrder({
+        data: {
+          cliente_id: null, // No auth for now, or get from user context
+          customerName: data.name,
+          email: data.email,
+          paymentMethod: data.payment,
+          shippingCost: shippingCost,
+          subtotal: subtotal,
+          total: totalFinal,
+          items: cart.items.map(it => ({
+            id: it.productId,
+            sku: it.slug, // Assumindo slug como SKU
+            name: it.name,
+            quantity: it.qty,
+            price: it.price
+          }))
+        }
+      });
+
+      // 2. Criar sessão de pagamento no Nubank
+      const payment = await createPaymentSession({
+        data: {
+          amount: Math.round(totalFinal * 100),
+          reference: order.numero.toString(),
+          shopper: {
+            firstName: data.name.split(' ')[0],
+            lastName: data.name.split(' ').slice(1).join(' ') || 'Cliente',
+            email: data.email,
+            taxId: data.cpf.replace(/\D/g, ''),
+            phone: data.phone.replace(/\D/g, '')
+          }
+        }
+      });
+
+      toast.success("Pedido realizado com sucesso!");
+      
+      if (payment.redirectUrl) {
+        window.location.href = payment.redirectUrl;
+      } else {
+        navigate({ to: "/conta/pedidos" });
+      }
+      
+      cart.clear();
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erro ao processar pedido: " + (err.message || "Tente novamente."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (cart.items.length === 0) {
@@ -232,6 +312,31 @@ function CheckoutPage() {
                 <input required placeholder="Estado (UF)" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value.toUpperCase() })} maxLength={2} className="w-full border border-border px-4 py-3 text-sm uppercase" />
               </div>
               <button type="button" onClick={goToPagamento} className="bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase hover:bg-cta transition">Continuar</button>
+              
+              {shippingOptions.length > 0 && (
+                <div className="mt-8 space-y-4 animate-in fade-in duration-500">
+                  <h3 className="text-lg font-serif">Opções de Frete (Super Frete)</h3>
+                  <div className="space-y-2">
+                    {shippingOptions.map((opt) => (
+                      <label key={opt.id} className={`flex items-center justify-between p-4 border cursor-pointer transition ${selectedShipping?.id === opt.id ? 'border-foreground bg-secondary/20' : 'border-border'}`}>
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="radio" 
+                            name="shipping" 
+                            checked={selectedShipping?.id === opt.id}
+                            onChange={() => setSelectedShipping(opt)}
+                          />
+                          <div>
+                            <p className="text-sm font-medium">{opt.name}</p>
+                            <p className="text-xs text-muted-foreground">Prazo: {opt.delivery_time} dias úteis</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium">{formatPrice(opt.price)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -368,8 +473,12 @@ function CheckoutPage() {
                 </div>
               )}
 
-              <button type="submit" className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition">
-                Confirmar pedido
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="bg-cta text-cta-foreground px-8 py-4 text-[12px] tracking-[0.2em] uppercase hover:bg-cta-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Processando..." : "Confirmar e Pagar"}
               </button>
             </div>
           )}
@@ -390,6 +499,12 @@ function CheckoutPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {shippingCost > 0 && (
+              <div className="flex justify-between animate-in fade-in slide-in-from-top-1">
+                <span className="text-muted-foreground">Frete ({selectedShipping?.name})</span>
+                <span>{formatPrice(shippingCost)}</span>
+              </div>
+            )}
             {voucherDiscount > 0 && (
               <div className="flex justify-between text-cta animate-in fade-in slide-in-from-top-1 duration-300">
                 <span>Voucher {appliedVoucher?.code} ({Math.round((appliedVoucher?.rate ?? 0) * 100)}%)</span>

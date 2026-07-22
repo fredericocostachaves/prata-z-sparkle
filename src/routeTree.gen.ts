@@ -32,10 +32,12 @@ import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
 import { Route as ContaEnderecosRouteImport } from './routes/conta.enderecos'
 import { Route as ContaDadosRouteImport } from './routes/conta.dados'
+import { Route as CheckoutRetornoRouteImport } from './routes/checkout.retorno'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiWebhookNupayRouteImport } from './routes/api/webhook/nupay'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFornecedoresRouteImport } from './routes/_authenticated/admin.fornecedores'
@@ -157,6 +159,11 @@ const ContaDadosRoute = ContaDadosRouteImport.update({
   path: '/dados',
   getParentRoute: () => ContaRoute,
 } as any)
+const CheckoutRetornoRoute = CheckoutRetornoRouteImport.update({
+  id: '/retorno',
+  path: '/retorno',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
   id: '/categoria/$slug',
   path: '/categoria/$slug',
@@ -176,6 +183,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiWebhookNupayRoute = ApiWebhookNupayRouteImport.update({
+  id: '/api/webhook/nupay',
+  path: '/api/webhook/nupay',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminProdutosRoute =
   AuthenticatedAdminProdutosRouteImport.update({
@@ -219,7 +231,7 @@ export interface FileRoutesByFullPath {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
@@ -236,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/checkout/retorno': typeof CheckoutRetornoRoute
   '/conta/dados': typeof ContaDadosRoute
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
@@ -244,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
@@ -253,7 +267,7 @@ export interface FileRoutesByTo {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
@@ -269,6 +283,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/checkout/retorno': typeof CheckoutRetornoRoute
   '/conta/dados': typeof ContaDadosRoute
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
@@ -277,6 +292,7 @@ export interface FileRoutesByTo {
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
@@ -288,7 +304,7 @@ export interface FileRoutesById {
   '/autenticidade': typeof AutenticidadeRoute
   '/blog': typeof BlogRouteWithChildren
   '/busca': typeof BuscaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
@@ -305,6 +321,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
+  '/checkout/retorno': typeof CheckoutRetornoRoute
   '/conta/dados': typeof ContaDadosRoute
   '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
@@ -313,6 +330,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/_authenticated/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
@@ -341,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/checkout/retorno'
     | '/conta/dados'
     | '/conta/enderecos'
     | '/conta/pedidos'
@@ -349,6 +368,7 @@ export interface FileRouteTypes {
     | '/admin/fornecedores'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/api/webhook/nupay'
     | '/admin/'
     | '/admin/clientes/$id'
     | '/admin/pedidos/$id'
@@ -374,6 +394,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/checkout/retorno'
     | '/conta/dados'
     | '/conta/enderecos'
     | '/conta/pedidos'
@@ -382,6 +403,7 @@ export interface FileRouteTypes {
     | '/admin/fornecedores'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/api/webhook/nupay'
     | '/admin'
     | '/admin/clientes/$id'
     | '/admin/pedidos/$id'
@@ -409,6 +431,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/blog/$slug'
     | '/categoria/$slug'
+    | '/checkout/retorno'
     | '/conta/dados'
     | '/conta/enderecos'
     | '/conta/pedidos'
@@ -417,6 +440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/fornecedores'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/produtos'
+    | '/api/webhook/nupay'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/clientes/$id'
     | '/_authenticated/admin/pedidos/$id'
@@ -428,7 +452,7 @@ export interface RootRouteChildren {
   AutenticidadeRoute: typeof AutenticidadeRoute
   BlogRoute: typeof BlogRouteWithChildren
   BuscaRoute: typeof BuscaRoute
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContaRoute: typeof ContaRouteWithChildren
   ContatoRoute: typeof ContatoRoute
   EntregaRoute: typeof EntregaRoute
@@ -444,6 +468,7 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
+  ApiWebhookNupayRoute: typeof ApiWebhookNupayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -609,6 +634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContaDadosRouteImport
       parentRoute: typeof ContaRoute
     }
+    '/checkout/retorno': {
+      id: '/checkout/retorno'
+      path: '/retorno'
+      fullPath: '/checkout/retorno'
+      preLoaderRoute: typeof CheckoutRetornoRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
     '/categoria/$slug': {
       id: '/categoria/$slug'
       path: '/categoria/$slug'
@@ -636,6 +668,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/webhook/nupay': {
+      id: '/api/webhook/nupay'
+      path: '/api/webhook/nupay'
+      fullPath: '/api/webhook/nupay'
+      preLoaderRoute: typeof ApiWebhookNupayRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/produtos': {
       id: '/_authenticated/admin/produtos'
@@ -750,6 +789,18 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface CheckoutRouteChildren {
+  CheckoutRetornoRoute: typeof CheckoutRetornoRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutRetornoRoute: CheckoutRetornoRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
 interface ContaRouteChildren {
   ContaDadosRoute: typeof ContaDadosRoute
   ContaEnderecosRoute: typeof ContaEnderecosRoute
@@ -770,7 +821,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutenticidadeRoute: AutenticidadeRoute,
   BlogRoute: BlogRouteWithChildren,
   BuscaRoute: BuscaRoute,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContaRoute: ContaRouteWithChildren,
   ContatoRoute: ContatoRoute,
   EntregaRoute: EntregaRoute,
@@ -786,6 +837,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
+  ApiWebhookNupayRoute: ApiWebhookNupayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

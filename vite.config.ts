@@ -7,8 +7,10 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
+const isLovable = process.env.LOVABLE_PROJECT_ID !== undefined;
+
 export default defineConfig({
   vite: {
-    plugins: [mcpPlugin()],
+    plugins: isLovable ? [mcpPlugin()] : [],
   },
 });

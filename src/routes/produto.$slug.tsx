@@ -6,6 +6,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { formatInstallment, formatPrice, getProductBySlug, getProductsByCategory } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import { getProductStock } from "@/lib/server-functions";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => {
@@ -34,6 +36,14 @@ function ProductPage() {
   const [active, setActive] = useState(0);
   const [size, setSize] = useState<string | undefined>(product?.sizes?.[0]);
   const [qty, setQty] = useState(1);
+
+  const { data: stock, isLoading: stockLoading } = useQuery({
+    queryKey: ['stock', product?.id],
+    queryFn: () => getProductStock({ data: product?.slug || '' }),
+    enabled: !!product,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   if (!product) {
     return (
@@ -111,6 +121,17 @@ function ProductPage() {
               {product.category}
             </p>
             <h1 className="mt-3 text-3xl md:text-4xl font-serif text-foreground">{product.name}</h1>
+            
+            <div className="mt-2 flex items-center gap-2">
+              {stockLoading ? (
+                <div className="h-4 w-24 bg-secondary animate-pulse rounded" />
+              ) : stock !== undefined ? (
+                <span className={`text-[10px] tracking-widest uppercase px-2 py-0.5 rounded ${stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  {stock > 0 ? `Em estoque (${stock} unidades)` : 'Indisponível'}
+                </span>
+              ) : null}
+            </div>
+
             <p className="mt-6 text-3xl font-serif text-foreground">{formatPrice(product.price)}</p>
             <p className="mt-1 text-sm text-muted-foreground">{formatInstallment(product.price)}</p>
 

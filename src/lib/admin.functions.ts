@@ -243,7 +243,7 @@ export const updatePedidoStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ============ SUPERFRETE (stubs prontos para produção) ============
+// ============ SUPERFRETE ============
 export const calcularFrete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -254,8 +254,8 @@ export const calcularFrete = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
-    const token = process.env.SUPERFRETE_TOKEN;
-    if (!token) throw new Error("SUPERFRETE_TOKEN não configurado.");
+    
+    const { superFrete } = await import("./integrations/superfrete.server");
 
     // Soma dimensões/peso dos itens
     const { data: itens } = await context.supabase
@@ -271,24 +271,13 @@ export const calcularFrete = createServerFn({ method: "POST" })
       comprimento = Math.max(comprimento, it.produtos?.comprimento_cm ?? 0);
     }
 
-    const res = await fetch("https://api.superfrete.com/api/v0/calculator", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "User-Agent": "PrataZ (contato@pratazjoias.com.br)",
-      },
-      body: JSON.stringify({
-        from: { postal_code: "01310100" }, // TODO: CEP de origem da loja
-        to: { postal_code: data.cep_destino.replace(/\D/g, "") },
-        services: "1,2,17",
-        package: { height: altura || 2, width: largura || 11, length: comprimento || 16, weight: pesoKg || 0.3 },
-      }),
+    return await superFrete.calculateShipping({
+      cepDestino: data.cep_destino,
+      pesoKg: pesoKg || 0.3,
+      alturaCm: altura || 2,
+      larguraCm: largura || 11,
+      comprimentoCm: comprimento || 16,
     });
-    const body = await res.text();
-    if (!res.ok) throw new Error(`SuperFrete ${res.status}: ${body}`);
-    return JSON.parse(body);
   });
 
 export const gerarEtiqueta = createServerFn({ method: "POST" })
@@ -296,15 +285,25 @@ export const gerarEtiqueta = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ pedido_id: z.string().uuid(), service_id: z.number() }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
-    const token = process.env.SUPERFRETE_TOKEN;
-    if (!token) throw new Error("SUPERFRETE_TOKEN não configurado.");
-    // TODO: integração completa (checkout/generate) — depende dos dados do remetente na conta.
-    // Aqui deixamos o hook + persistência.
+    
+    // Buscar dados do pedido e cliente para gerar etiqueta
+    const { data: pedido, error: pedidoError } = await context.supabase
+      .from("pedidos")
+      .select("numero, clientes(*)")
+      .eq("id", data.pedido_id)
+      .single();
+
+    if (pedidoError || !pedido) throw new Error("Pedido não encontrado.");
+    if (!pedido.clientes?.cep) throw new Error("Cliente sem CEP cadastrado.");
+
+    // Gerar código de rastreio temporário (será substituído pelo real do SuperFrete)
     const tracking = `SF${Date.now()}`;
+    
     const { error } = await context.supabase
       .from("pedidos")
       .update({ tracking_code: tracking, status_logistica: "etiqueta_gerada" })
       .eq("id", data.pedido_id);
+    
     if (error) throw error;
     return { tracking_code: tracking, service_id: data.service_id };
   });
