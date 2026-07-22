@@ -85,8 +85,8 @@ function RootComponent() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
           navigate({ to: "/admin", replace: true });
         }
       },
