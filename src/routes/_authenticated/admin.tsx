@@ -10,7 +10,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminLayout() {
   const [status, setStatus] = useState<"loading" | "ok" | "denied">("loading");
-  const [errorMsg, setErrorMsg] = useState<string>("");
   const fetchRole = useServerFn(getMyRole);
   const navigate = useNavigate();
 
@@ -18,9 +17,9 @@ function AdminLayout() {
     fetchRole()
       .then((r) => {
         if (r.isAdmin || r.isStaff) setStatus("ok");
-        else { setErrorMsg("Perfil sem role admin/staff."); setStatus("denied"); }
+        else setStatus("denied");
       })
-      .catch((err) => { console.error("[admin] getMyRole failed:", err); setErrorMsg(String(err?.message ?? err)); setStatus("denied"); });
+      .catch(() => setStatus("denied"));
   }, [fetchRole]);
 
   if (status === "loading") {
@@ -40,7 +39,6 @@ function AdminLayout() {
           Sua conta não tem permissão para acessar o backoffice. Faça login com o e-mail
           administrador cadastrado.
         </p>
-        {errorMsg && <p className="text-xs text-red-500 mt-2 max-w-md break-all">{errorMsg}</p>}
         <button
           onClick={() => navigate({ to: "/" })}
           className="mt-4 bg-foreground text-background px-6 py-3 text-[12px] tracking-[0.2em] uppercase"
