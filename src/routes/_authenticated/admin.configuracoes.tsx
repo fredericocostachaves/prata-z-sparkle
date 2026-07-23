@@ -2,25 +2,59 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Link, ExternalLink, Check, X } from "lucide-react";
-import { getBlingStatus, getBlingAuthUrl } from "@/lib/admin.functions";
+import { Link, Check } from "lucide-react";
+import { getBlingStatus, getBlingAuthUrl, exchangeBlingCode } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    bling_code: (search.bling_code as string) || "",
+    bling_state: (search.bling_state as string) || "",
+  }),
   component: ConfiguracoesPage,
 });
 
 function ConfiguracoesPage() {
+  const { bling_code, bling_state } = Route.useSearch();
   const [blingStatus, setBlingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [exchanging, setExchanging] = useState(false);
   const fetchStatus = useServerFn(getBlingStatus);
   const fetchAuthUrl = useServerFn(getBlingAuthUrl);
+  const exchangeCode = useServerFn(exchangeBlingCode);
 
-  useEffect(() => {
+  const checkStatus = () => {
     fetchStatus()
       .then(setBlingStatus)
       .catch(() => setBlingStatus({ connected: false }))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    checkStatus();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkStatus();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
+
+  useEffect(() => {
+    if (bling_code && !exchanging) {
+      setExchanging(true);
+      exchangeCode({ data: { code: bling_code, state: bling_state } })
+        .then(() => {
+          toast.success("Bling conectado com sucesso!");
+          checkStatus();
+          window.history.replaceState({}, "", "/admin/configuracoes");
+        })
+        .catch((e: any) => {
+          toast.error(e.message || "Erro ao autorizar Bling");
+          setExchanging(false);
+          window.history.replaceState({}, "", "/admin/configuracoes");
+        });
+    }
+  }, [bling_code]);
 
   const handleConnectBling = async () => {
     try {
@@ -56,8 +90,8 @@ function ConfiguracoesPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {loading ? (
-              <span className="text-xs text-muted-foreground">Verificando...</span>
+            {loading || exchanging ? (
+              <span className="text-xs text-muted-foreground">{exchanging ? "Salvando..." : "Verificando..."}</span>
             ) : blingStatus?.connected ? (
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 text-xs text-green-600">
