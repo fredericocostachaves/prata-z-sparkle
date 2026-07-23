@@ -55,17 +55,25 @@ class BlingClient {
     this.clientSecret = process.env.BLING_CLIENT_SECRET || '';
   }
 
-  async loadFromDb(supabaseClient?: any): Promise<void> {
+  async loadFromDb(supabaseClient?: any, userId?: string): Promise<void> {
     const client = supabaseClient || await this.getAdminClient();
     if (!client) return;
 
     try {
-      const { data } = await (client as any)
+      let query = (client as any)
         .from("bling_tokens")
-        .select("access_token, refresh_token, expires_at")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .select("access_token, refresh_token, expires_at");
+
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      const { data, error } = await query.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+
+      if (error) {
+        console.warn("[Bling] Erro ao consultar bling_tokens:", error.message);
+        return;
+      }
 
       if (data) {
         this.accessToken = data.access_token;
