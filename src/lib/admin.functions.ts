@@ -192,7 +192,17 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
     await ensureStaff(context);
 
     const { bling } = await import("./integrations/bling.server");
-    await bling.loadFromDb(context.supabase, context.userId);
+
+    const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
+      .from("bling_tokens")
+      .select("access_token, refresh_token, expires_at")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
+    if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling no painel administrativo.");
+
+    bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
 
     const { data: produto, error } = await context.supabase
       .from("produtos")

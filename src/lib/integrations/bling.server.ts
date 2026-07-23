@@ -85,6 +85,12 @@ class BlingClient {
     }
   }
 
+  setTokens(accessToken: string, refreshToken: string, expiresAt: number): void {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
+    this.tokenExpiresAt = expiresAt;
+  }
+
   private async getAdminClient(): Promise<any> {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
