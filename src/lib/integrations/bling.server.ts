@@ -49,20 +49,18 @@ class BlingClient {
   private tokenExpiresAt = 0;
   private maxRetries = 3;
   private retryDelay = 1000;
-  private tokenLoaded = false;
 
   constructor() {
     this.clientId = process.env.BLING_CLIENT_ID || '';
     this.clientSecret = process.env.BLING_CLIENT_SECRET || '';
   }
 
-  private async loadTokenFromDb(): Promise<void> {
-    if (this.tokenLoaded) return;
-    this.tokenLoaded = true;
+  async loadFromDb(supabaseClient?: any): Promise<void> {
+    const client = supabaseClient || await this.getAdminClient();
+    if (!client) return;
 
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data } = await (supabaseAdmin as any)
+      const { data } = await (client as any)
         .from("bling_tokens")
         .select("access_token, refresh_token, expires_at")
         .order("updated_at", { ascending: false })
@@ -76,6 +74,15 @@ class BlingClient {
       }
     } catch (err) {
       console.warn("[Bling] Não foi possível carregar token do banco:", err);
+    }
+  }
+
+  private async getAdminClient(): Promise<any> {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      return supabaseAdmin;
+    } catch {
+      return null;
     }
   }
 
@@ -155,7 +162,9 @@ class BlingClient {
   }
 
   private async getAccessToken(): Promise<string> {
-    await this.loadTokenFromDb();
+    if (!this.accessToken) {
+      await this.loadFromDb();
+    }
     if (!this.accessToken) {
       throw new Error('Bling não autorizado. Conecte o Bling no painel administrativo.');
     }

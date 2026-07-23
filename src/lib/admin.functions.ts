@@ -192,6 +192,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
     await ensureStaff(context);
 
     const { bling } = await import("./integrations/bling.server");
+    await bling.loadFromDb(context.supabase);
 
     const { data: produto, error } = await context.supabase
       .from("produtos")
