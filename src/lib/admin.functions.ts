@@ -18,6 +18,63 @@ export const getMyRole = createServerFn({ method: "GET" })
     return { isAdmin: !!isAdmin, isStaff: !!isStaff };
   });
 
+// ============ BLING OAUTH ============
+
+export const getBlingAuthUrl = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { bling } = await import("./integrations/bling.server");
+    const state = crypto.randomUUID();
+    return { url: bling.getAuthUrl(state) };
+  });
+
+export const exchangeBlingCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ code: z.string().min(1), state: z.string().optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+
+    const { bling } = await import("./integrations/bling.server");
+    const tokenData = await bling.exchangeCode(data.code);
+
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+
+    const { error } = await (context.supabase as any).from("bling_tokens").upsert(
+      {
+        user_id: context.userId,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_at: expiresAt,
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (error) throw new Error(`Erro ao salvar token: ${error.message}`);
+
+    return { ok: true };
+  });
+
+export const getBlingStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+
+    const { data, error } = await (context.supabase as any)
+      .from("bling_tokens")
+      .select("expires_at, created_at")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (error || !data) return { connected: false };
+
+    return {
+      connected: true,
+      expiresAt: data.expires_at,
+      connectedAt: data.created_at,
+    };
+  });
+
 // ============ DASHBOARD ============
 export const getDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -157,7 +214,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
       },
     };
 
-    let result;
+    let result: any;
     if (existing) {
       result = await bling.updateProduct(existing.id, payload);
     } else {

@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Package, Users, Building2, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, Users, Building2, Settings, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const items = [
@@ -8,6 +8,7 @@ const items = [
   { to: "/admin/produtos", label: "Produtos (Estoque)", icon: Package },
   { to: "/admin/clientes", label: "Clientes (CRM)", icon: Users },
   { to: "/admin/fornecedores", label: "Fornecedores", icon: Building2 },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
 export function AdminSidebar() {

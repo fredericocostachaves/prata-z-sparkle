@@ -38,12 +38,15 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiWebhookNupayRouteImport } from './routes/api/webhook/nupay'
+import { Route as ApiBlingCallbackRouteImport } from './routes/api/bling/callback'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFornecedoresRouteImport } from './routes/_authenticated/admin.fornecedores'
+import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminPedidosIdRouteImport } from './routes/_authenticated/admin.pedidos.$id'
 import { Route as AuthenticatedAdminClientesIdRouteImport } from './routes/_authenticated/admin.clientes.$id'
+import { Route as AuthenticatedAdminBlingCallbackRouteImport } from './routes/_authenticated/admin/bling/callback'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -189,6 +192,11 @@ const ApiWebhookNupayRoute = ApiWebhookNupayRouteImport.update({
   path: '/api/webhook/nupay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBlingCallbackRoute = ApiBlingCallbackRouteImport.update({
+  id: '/api/bling/callback',
+  path: '/api/bling/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminProdutosRoute =
   AuthenticatedAdminProdutosRouteImport.update({
     id: '/produtos',
@@ -205,6 +213,12 @@ const AuthenticatedAdminFornecedoresRoute =
   AuthenticatedAdminFornecedoresRouteImport.update({
     id: '/fornecedores',
     path: '/fornecedores',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminConfiguracoesRoute =
+  AuthenticatedAdminConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminClientesRoute =
@@ -224,6 +238,12 @@ const AuthenticatedAdminClientesIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminClientesRoute,
+  } as any)
+const AuthenticatedAdminBlingCallbackRoute =
+  AuthenticatedAdminBlingCallbackRouteImport.update({
+    id: '/bling/callback',
+    path: '/bling/callback',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -254,11 +274,14 @@ export interface FileRoutesByFullPath {
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/bling/callback': typeof ApiBlingCallbackRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
   '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
@@ -289,11 +312,14 @@ export interface FileRoutesByTo {
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/bling/callback': typeof ApiBlingCallbackRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
   '/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
@@ -327,11 +353,14 @@ export interface FileRoutesById {
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRouteWithChildren
+  '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
+  '/api/bling/callback': typeof ApiBlingCallbackRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
   '/_authenticated/admin/clientes/$id': typeof AuthenticatedAdminClientesIdRoute
   '/_authenticated/admin/pedidos/$id': typeof AuthenticatedAdminPedidosIdRoute
 }
@@ -365,11 +394,14 @@ export interface FileRouteTypes {
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/clientes'
+    | '/admin/configuracoes'
     | '/admin/fornecedores'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/api/bling/callback'
     | '/api/webhook/nupay'
     | '/admin/'
+    | '/admin/bling/callback'
     | '/admin/clientes/$id'
     | '/admin/pedidos/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -400,11 +432,14 @@ export interface FileRouteTypes {
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/clientes'
+    | '/admin/configuracoes'
     | '/admin/fornecedores'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/api/bling/callback'
     | '/api/webhook/nupay'
     | '/admin'
+    | '/admin/bling/callback'
     | '/admin/clientes/$id'
     | '/admin/pedidos/$id'
   id:
@@ -437,11 +472,14 @@ export interface FileRouteTypes {
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/_authenticated/admin/clientes'
+    | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/fornecedores'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/produtos'
+    | '/api/bling/callback'
     | '/api/webhook/nupay'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/bling/callback'
     | '/_authenticated/admin/clientes/$id'
     | '/_authenticated/admin/pedidos/$id'
   fileRoutesById: FileRoutesById
@@ -468,6 +506,7 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
+  ApiBlingCallbackRoute: typeof ApiBlingCallbackRoute
   ApiWebhookNupayRoute: typeof ApiWebhookNupayRoute
 }
 
@@ -676,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhookNupayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bling/callback': {
+      id: '/api/bling/callback'
+      path: '/api/bling/callback'
+      fullPath: '/api/bling/callback'
+      preLoaderRoute: typeof ApiBlingCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/produtos': {
       id: '/_authenticated/admin/produtos'
       path: '/produtos'
@@ -695,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/admin/fornecedores'
       preLoaderRoute: typeof AuthenticatedAdminFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/configuracoes': {
+      id: '/_authenticated/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/clientes': {
@@ -717,6 +770,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/clientes/$id'
       preLoaderRoute: typeof AuthenticatedAdminClientesIdRouteImport
       parentRoute: typeof AuthenticatedAdminClientesRoute
+    }
+    '/_authenticated/admin/bling/callback': {
+      id: '/_authenticated/admin/bling/callback'
+      path: '/bling/callback'
+      fullPath: '/admin/bling/callback'
+      preLoaderRoute: typeof AuthenticatedAdminBlingCallbackRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
   }
 }
@@ -751,18 +811,22 @@ const AuthenticatedAdminPedidosRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRouteWithChildren
+  AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminFornecedoresRoute: typeof AuthenticatedAdminFornecedoresRoute
   AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRouteWithChildren
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminBlingCallbackRoute: typeof AuthenticatedAdminBlingCallbackRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRouteWithChildren,
+  AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminFornecedoresRoute: AuthenticatedAdminFornecedoresRoute,
   AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRouteWithChildren,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminBlingCallbackRoute: AuthenticatedAdminBlingCallbackRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
@@ -837,6 +901,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
+  ApiBlingCallbackRoute: ApiBlingCallbackRoute,
   ApiWebhookNupayRoute: ApiWebhookNupayRoute,
 }
 export const routeTree = rootRouteImport
