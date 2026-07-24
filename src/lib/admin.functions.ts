@@ -199,8 +199,10 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .maybeSingle();
 
+    console.error("[syncProdutoBling] tokenErr:", tokenErr, "tokenRow:", tokenRow ? "FOUND" : "NULL", "userId:", context.userId);
+
     if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
-    if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling no painel administrativo.");
+    if (!tokenRow) throw new Error(`Bling não autorizado (userId: ${context.userId}). Conecte o Bling em Configurações.`);
 
     bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
 

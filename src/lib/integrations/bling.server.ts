@@ -329,4 +329,8 @@ export const bling = new Proxy({} as BlingClient, {
     if (!_bling) _bling = new BlingClient();
     return Reflect.get(_bling, prop, receiver);
   },
+  set(_, prop, value) {
+    if (!_bling) _bling = new BlingClient();
+    return Reflect.set(_bling, prop, value);
+  },
 });
