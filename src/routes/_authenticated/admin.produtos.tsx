@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch } from "@/lib/admin.functions";
+import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw } from "lucide-react";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, countProdutosCadastrados, updateStockBlingBatch } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -89,6 +89,8 @@ function ProdutosPage() {
   const syncBling = useServerFn(syncProdutoBling);
   const getCount = useServerFn(countBlingProducts);
   const importBatch = useServerFn(importBlingBatch);
+  const getCadastrados = useServerFn(countProdutosCadastrados);
+  const updateStockBatch = useServerFn(updateStockBlingBatch);
 
   const load = useCallback(() => {
     list().then(setRows).catch((e) => toast.error(e.message));
@@ -175,6 +177,56 @@ function ProdutosPage() {
     }
   };
 
+  const onUpdateStockBling = async () => {
+    setProgress({ phase: "counting", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+
+    try {
+      const { total } = await getCadastrados({ data: undefined });
+
+      if (total === 0) {
+        toast.info("Nenhum produto cadastrado no sistema");
+        setProgress({ phase: "idle", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+        return;
+      }
+
+      setProgress({ phase: "importing", current: 0, total, imported: 0, skipped: 0, errors: 0 });
+
+      const batchSize = 50;
+      const pages = Math.ceil(total / batchSize);
+      let updated = 0;
+      let notFound = 0;
+      let errors = 0;
+
+      for (let page = 1; page <= pages; page++) {
+        const result = await updateStockBatch({ data: { page, limit: batchSize } });
+        updated += result.updated;
+        notFound += result.notFound;
+        errors += result.errors;
+
+        setProgress({
+          phase: "importing",
+          current: Math.min(page * batchSize, total),
+          total,
+          imported: updated,
+          skipped: notFound,
+          errors,
+        });
+      }
+
+      setProgress({ phase: "done", current: total, total, imported: updated, skipped: notFound, errors });
+
+      if (updated > 0) toast.success(`Estoque atualizado de ${updated} produto(s)`);
+      if (notFound > 0) toast.info(`${notFound} produto(s) não encontrado(s) no Bling`);
+      if (errors > 0) toast.error(`${errors} erro(s) na atualização`);
+
+      load();
+    } catch (e: any) {
+      setProgress({ phase: "error", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
+      toast.error(e.message);
+      setTimeout(() => setProgress((p) => p.phase === "error" ? { ...p, phase: "idle" } : p), 3000);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <SyncOverlay progress={progress} />
@@ -186,6 +238,9 @@ function ProdutosPage() {
         </div>
         <button onClick={onImportBling} disabled={progress.phase !== "idle" && progress.phase !== "done"} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
           <Download className="h-4 w-4" /> Importar do Bling
+        </button>
+        <button onClick={onUpdateStockBling} disabled={progress.phase !== "idle" && progress.phase !== "done"} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
+          <RefreshCw className="h-4 w-4" /> Atualizar Estoque
         </button>
         <button onClick={() => setEditing({})} className="bg-foreground text-background px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2">
           <Plus className="h-4 w-4" /> Novo

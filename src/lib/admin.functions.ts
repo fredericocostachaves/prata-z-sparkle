@@ -327,6 +327,9 @@ export const importBlingBatch = createServerFn({ method: "POST" })
       return { imported: 0, skipped: 0, errors: 0, processed: 0 };
     }
 
+    const productIds = blingProducts.map((p) => p.id);
+    const stockMap = await bling.getStockBalances(productIds);
+
     const { data: existingProdutos } = await context.supabase
       .from("produtos")
       .select("sku");
@@ -345,12 +348,14 @@ export const importBlingBatch = createServerFn({ method: "POST" })
         continue;
       }
 
+      const estoque = stockMap.get(bp.id) ?? 0;
+
       try {
         const { error } = await context.supabase.from("produtos").insert({
           sku,
           nome: bp.nome,
           preco_venda: Number(bp.preco) || 0,
-          estoque_atual: 0,
+          estoque_atual: estoque,
           estoque_minimo: 0,
           ativo: bp.situacao === "A",
         });
@@ -367,6 +372,78 @@ export const importBlingBatch = createServerFn({ method: "POST" })
     }
 
     return { imported, skipped, errors, processed: blingProducts.length };
+  });
+
+export const countProdutosCadastrados = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { count } = await context.supabase
+      .from("produtos")
+      .select("sku", { count: "exact", head: true });
+    return { total: count ?? 0 };
+  });
+
+export const updateStockBlingBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1).max(100),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const bling = await ensureBlingTokens(context);
+
+    const { data: blingProducts } = await bling.listProducts(data.page, data.limit);
+
+    if (blingProducts.length === 0) {
+      return { updated: 0, notFound: 0, errors: 0, processed: 0 };
+    }
+
+    const productIds = blingProducts.map((p) => p.id);
+    const stockMap = await bling.getStockBalances(productIds);
+
+    const { data: existingProdutos } = await context.supabase
+      .from("produtos")
+      .select("id, sku");
+
+    const skuToId = new Map<string, string>();
+    for (const p of existingProdutos ?? []) {
+      skuToId.set(p.sku, p.id);
+    }
+
+    let updated = 0;
+    let notFound = 0;
+    let errors = 0;
+
+    for (const bp of blingProducts) {
+      const sku = bp.codigo || `${bp.id}`;
+      const supabaseId = skuToId.get(sku);
+
+      if (!supabaseId) {
+        notFound++;
+        continue;
+      }
+
+      const estoque = stockMap.get(bp.id) ?? 0;
+
+      try {
+        const { error } = await context.supabase
+          .from("produtos")
+          .update({ estoque_atual: estoque })
+          .eq("id", supabaseId);
+
+        if (error) {
+          errors++;
+        } else {
+          updated++;
+        }
+      } catch {
+        errors++;
+      }
+    }
+
+    return { updated, notFound, errors, processed: blingProducts.length };
   });
 
 // ============ CRUD FORNECEDORES ============

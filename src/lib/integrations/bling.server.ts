@@ -244,6 +244,30 @@ class BlingClient {
     }
   }
 
+  async getStockBalances(productIds: number[]): Promise<Map<number, number>> {
+    const stockMap = new Map<number, number>();
+    if (productIds.length === 0) return stockMap;
+
+    const batchSize = 50;
+    for (let i = 0; i < productIds.length; i += batchSize) {
+      const batch = productIds.slice(i, i + batchSize);
+      const params = batch.map((id) => `idsProdutos[]=${id}`).join("&");
+      try {
+        const stockData = await this.request<{ data: BlingStockBalance[] }>(
+          `/estoques/saldos?${params}`
+        );
+        for (const s of stockData.data ?? []) {
+          const qty = s.saldoDisponivel ?? s.saldoFisicoTotal ?? 0;
+          stockMap.set(s.idProduto, qty);
+        }
+      } catch (err) {
+        console.warn("[Bling] Erro ao buscar estoques em lote:", err);
+      }
+      if (i + batchSize < productIds.length) await this.sleep(300);
+    }
+    return stockMap;
+  }
+
   async createOrder(orderData: BlingOrderData) {
     return this.request('/pedidos/vendas', {
       method: 'POST',
