@@ -91,6 +91,39 @@ class BlingClient {
     this.tokenExpiresAt = expiresAt;
   }
 
+  get isExpired(): boolean {
+    return Date.now() >= this.tokenExpiresAt - 60_000;
+  }
+
+  async refreshTokens(): Promise<void> {
+    if (!this.refreshToken) {
+      throw new Error('Refresh token não disponível. Reconecte o Bling em Configurações.');
+    }
+
+    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: this.refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(`Bling token refresh failed: ${response.status} ${JSON.stringify(error)}`);
+    }
+
+    const data: BlingTokenResponse = await response.json();
+    this.accessToken = data.access_token;
+    this.refreshToken = data.refresh_token;
+    this.tokenExpiresAt = Date.now() + data.expires_in * 1000;
+  }
+
   private async getAdminClient(): Promise<any> {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -130,60 +163,12 @@ class BlingClient {
     return data;
   }
 
-  private async refreshAccessToken(): Promise<string> {
-    if (!this.refreshToken) {
-      throw new Error('BLING_REFRESH_TOKEN não disponível. Faça a autorização OAuth novamente.');
-    }
-
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: this.refreshToken,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(`Bling token refresh failed: ${response.status} ${error.error || response.statusText}`);
-    }
-
-    const data: BlingTokenResponse = await response.json();
-    this.accessToken = data.access_token;
-    this.refreshToken = data.refresh_token;
-    this.tokenExpiresAt = Date.now() + data.expires_in * 1000;
-
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await (supabaseAdmin as any).from("bling_tokens").upsert(
-        {
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at: new Date(this.tokenExpiresAt).toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
-    } catch (err) {
-      console.warn("[Bling] Não foi possível salvar token atualizado:", err);
-    }
-
-    return this.accessToken;
-  }
-
   private async getAccessToken(): Promise<string> {
     if (!this.accessToken) {
       await this.loadFromDb();
     }
     if (!this.accessToken) {
       throw new Error('Bling não autorizado. Conecte o Bling no painel administrativo.');
-    }
-    if (Date.now() >= this.tokenExpiresAt - 60_000) {
-      return this.refreshAccessToken();
     }
     return this.accessToken;
   }
@@ -207,11 +192,6 @@ class BlingClient {
           console.warn(`Bling rate limit atingido. Retry ${attempt}/${this.maxRetries} em ${retryAfter}s`);
           await this.sleep(retryAfter * 1000);
           continue;
-        }
-
-        if (response.status === 401) {
-          await this.refreshAccessToken();
-          return this.request<T>(endpoint, options);
         }
 
         if (!response.ok) {

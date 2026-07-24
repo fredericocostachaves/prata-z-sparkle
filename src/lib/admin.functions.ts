@@ -206,6 +206,23 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
 
     bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
 
+    if (bling.isExpired) {
+      try {
+        await bling.refreshTokens();
+        await (context.supabase as any).from("bling_tokens").upsert(
+          {
+            user_id: context.userId,
+            access_token: (bling as any).accessToken,
+            refresh_token: (bling as any).refreshToken,
+            expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      } catch (refreshErr: any) {
+        throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
+      }
+    }
+
     const { data: produto, error } = await context.supabase
       .from("produtos")
       .select("*")
