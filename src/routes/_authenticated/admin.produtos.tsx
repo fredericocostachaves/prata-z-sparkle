@@ -132,6 +132,8 @@ function ProdutoForm({ produto, fornecedores, onSave, onCancel }: any) {
     altura_cm: produto.altura_cm ?? null,
     largura_cm: produto.largura_cm ?? null,
     comprimento_cm: produto.comprimento_cm ?? null,
+    imagem_url: produto.imagem_url ?? "",
+    galeria_urls: produto.galeria_urls ?? [],
   });
 
   return (
@@ -156,6 +158,8 @@ function ProdutoForm({ produto, fornecedores, onSave, onCancel }: any) {
           <label>Altura (cm)<input type="number" value={f.altura_cm ?? ""} onChange={(e) => setF({ ...f, altura_cm: e.target.value ? Number(e.target.value) : null })} className="w-full border border-border p-2 mt-1" /></label>
           <label>Largura (cm)<input type="number" value={f.largura_cm ?? ""} onChange={(e) => setF({ ...f, largura_cm: e.target.value ? Number(e.target.value) : null })} className="w-full border border-border p-2 mt-1" /></label>
           <label>Comprimento (cm)<input type="number" value={f.comprimento_cm ?? ""} onChange={(e) => setF({ ...f, comprimento_cm: e.target.value ? Number(e.target.value) : null })} className="w-full border border-border p-2 mt-1" /></label>
+          <label className="sm:col-span-2">URL da Imagem de Capa<input value={f.imagem_url} onChange={(e) => setF({ ...f, imagem_url: e.target.value })} placeholder="https://..." className="w-full border border-border p-2 mt-1" /></label>
+          <label className="sm:col-span-2">URLs da Galeria (uma por linha)<textarea value={(f.galeria_urls || []).join("\n")} onChange={(e) => setF({ ...f, galeria_urls: e.target.value.split("\n").filter(u => u.trim()) })} placeholder="https://url1.jpg&#10;https://url2.jpg" className="w-full border border-border p-2 mt-1" rows={2} /></label>
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <button onClick={onCancel} className="px-4 py-2 border border-border text-xs uppercase tracking-[0.2em]">Cancelar</button>

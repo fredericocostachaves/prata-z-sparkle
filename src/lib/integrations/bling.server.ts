@@ -300,6 +300,39 @@ class BlingClient {
       return null;
     }
   }
+
+  async uploadProductImage(productId: number, imageUrl: string): Promise<void> {
+    const token = await this.getAccessToken();
+    const url = `${BASE_URL}/produtos/${productId}/imagem`;
+    
+    // Fetch the image from URL
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image from ${imageUrl}`);
+    }
+    
+    const imageBlob = await imageResponse.blob();
+    const fileName = imageUrl.split('/').pop() || 'produto.jpg';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', imageBlob, fileName);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = errorData?.error?.message || errorData?.message || response.statusText;
+      throw new Error(`Bling API ${response.status}: ${errorMsg}`);
+    }
+  }
 }
 
 let _bling: BlingClient | undefined;

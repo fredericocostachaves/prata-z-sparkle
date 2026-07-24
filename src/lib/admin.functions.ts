@@ -157,6 +157,8 @@ const produtoSchema = z.object({
   altura_cm: z.number().optional().nullable(),
   largura_cm: z.number().optional().nullable(),
   comprimento_cm: z.number().optional().nullable(),
+  imagem_url: z.string().url().optional().nullable(),
+  galeria_urls: z.array(z.string().url()).optional().nullable(),
 });
 
 export const upsertProduto = createServerFn({ method: "POST" })
@@ -166,10 +168,10 @@ export const upsertProduto = createServerFn({ method: "POST" })
     await ensureStaff(context);
     const { id, ...rest } = data;
     if (id) {
-      const { error } = await context.supabase.from("produtos").update(rest).eq("id", id);
+      const { error } = await context.supabase.from("produtos").update(rest as any).eq("id", id);
       if (error) throw error;
     } else {
-      const { error } = await context.supabase.from("produtos").insert(rest);
+      const { error } = await context.supabase.from("produtos").insert(rest as any);
       if (error) throw error;
     }
     return { ok: true };
@@ -249,7 +251,19 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
       result = await bling.createProduct(payload);
     }
 
-    return { ok: true, bling_id: result?.data?.id ?? existing?.id, action: existing ? "atualizado" : "criado" };
+    const blingId = result?.data?.id ?? existing?.id;
+    const produtoAny = produto as any;
+    
+    // Upload cover image if available
+    if (blingId && produtoAny.imagem_url) {
+      try {
+        await bling.uploadProductImage(blingId, produtoAny.imagem_url);
+      } catch (imgErr: any) {
+        console.error("[syncProdutoBling] Erro ao enviar imagem:", imgErr.message);
+      }
+    }
+
+    return { ok: true, bling_id: blingId, action: existing ? "atualizado" : "criado" };
   });
 
 // ============ CRUD FORNECEDORES ============
