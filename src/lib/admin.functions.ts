@@ -449,50 +449,32 @@ export const updateStockBlingBatch = createServerFn({ method: "POST" })
     await ensureStaff(context);
     const bling = await ensureBlingTokens(context);
 
-    const { data: blingProducts } = await bling.listProducts(data.page, data.limit);
-
-    if (blingProducts.length === 0) {
-      return { updated: 0, notFound: 0, errors: 0, processed: 0 };
-    }
-
-    const productIds = blingProducts.map((p) => p.id);
-    const stockMap = await bling.getStockBalances(productIds);
-
     const { data: existingProdutos } = await context.supabase
       .from("produtos")
-      .select("id, sku, nome");
+      .select("id, sku")
+      .range((data.page - 1) * data.limit, data.page * data.limit - 1);
 
-    const skuToId = new Map<string, string>();
-    const nomeToId = new Map<string, string>();
-    for (const p of existingProdutos ?? []) {
-      skuToId.set(p.sku, p.id);
-      if (p.nome) nomeToId.set(p.nome.toLowerCase().trim(), p.id);
+    if (!existingProdutos || existingProdutos.length === 0) {
+      return { updated: 0, notFound: 0, errors: 0, processed: 0 };
     }
 
     let updated = 0;
     let notFound = 0;
     let errors = 0;
 
-    for (const bp of blingProducts) {
-      const sku = (bp.codigo || "").trim();
-      let supabaseId = sku ? skuToId.get(sku) : undefined;
-
-      if (!supabaseId && bp.nome) {
-        supabaseId = nomeToId.get(bp.nome.toLowerCase().trim());
-      }
-
-      if (!supabaseId) {
+    for (const p of existingProdutos) {
+      const sku = (p.sku || "").trim();
+      if (!sku) {
         notFound++;
         continue;
       }
 
-      const estoque = stockMap.get(bp.id) ?? 0;
-
       try {
+        const estoque = await bling.getProductStock(sku);
         const { error } = await context.supabase
           .from("produtos")
           .update({ estoque_atual: estoque })
-          .eq("id", supabaseId);
+          .eq("id", p.id);
 
         if (error) {
           errors++;
@@ -502,9 +484,11 @@ export const updateStockBlingBatch = createServerFn({ method: "POST" })
       } catch {
         errors++;
       }
+
+      await new Promise((r) => setTimeout(r, 200));
     }
 
-    return { updated, notFound, errors, processed: blingProducts.length };
+    return { updated, notFound, errors, processed: existingProdutos.length };
   });
 
 export const syncProdutoEstoqueBling = createServerFn({ method: "POST" })

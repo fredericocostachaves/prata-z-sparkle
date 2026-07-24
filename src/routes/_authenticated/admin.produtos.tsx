@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch, syncProdutoEstoqueBling } from "@/lib/admin.functions";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch, syncProdutoEstoqueBling, countProdutosCadastrados } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -102,6 +102,7 @@ function ProdutosPage() {
   const syncEstoqueBling = useServerFn(syncProdutoEstoqueBling);
   const getCount = useServerFn(countBlingProducts);
   const importBatch = useServerFn(importBlingBatch);
+  const getCadastrados = useServerFn(countProdutosCadastrados);
   const updateStockBatch = useServerFn(updateStockBlingBatch);
 
   const load = useCallback(() => {
@@ -207,10 +208,10 @@ function ProdutosPage() {
     setProgress({ phase: "counting", action: "stock", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
 
     try {
-      const { total } = await getCount({ data: undefined });
+      const { total } = await getCadastrados({ data: undefined });
 
       if (total === 0) {
-        toast.info("Nenhum produto encontrado no Bling");
+        toast.info("Nenhum produto cadastrado no sistema");
         setProgress({ phase: "idle", action: "stock", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
         return;
       }
