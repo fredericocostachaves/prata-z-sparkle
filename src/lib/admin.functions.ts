@@ -234,14 +234,12 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
     const existing = await bling.searchProduct(produto.sku);
 
     const payload = {
-      codigo: produto.sku,
       nome: produto.nome,
-      preco: Number(produto.preco_venda),
+      codigo: produto.sku,
       tipo: "P",
+      formato: "S",
+      preco: Number(produto.preco_venda),
       situacao: "Ativo",
-      estoque: {
-        saldo: produto.estoque_atual,
-      },
     };
 
     let result: any;

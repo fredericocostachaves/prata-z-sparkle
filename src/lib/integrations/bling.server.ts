@@ -134,8 +134,7 @@ class BlingClient {
   }
 
   getAuthUrl(state: string): string {
-    const scopes = ['produtos', 'pedidos', 'estoque'].join(' ');
-    return `https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id=${this.clientId}&state=${state}&scope=${encodeURIComponent(scopes)}`;
+    return `https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id=${this.clientId}&state=${state}`;
   }
 
   async exchangeCode(code: string): Promise<BlingTokenResponse> {
