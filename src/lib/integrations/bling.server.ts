@@ -285,6 +285,28 @@ class BlingClient {
     }
   }
 
+  async listProducts(page = 1, limit = 100): Promise<{ data: BlingProduct[]; total: number }> {
+    const data = await this.request<{ data: BlingProduct[] }>(
+      `/produtos?pagina=${page}&limite=${limit}&criterio=1`
+    );
+    const total = data.data?.length ?? 0;
+    return { data: data.data ?? [], total };
+  }
+
+  async listAllProducts(): Promise<BlingProduct[]> {
+    const all: BlingProduct[] = [];
+    let page = 1;
+    const limit = 100;
+    while (true) {
+      const { data } = await this.listProducts(page, limit);
+      all.push(...data);
+      if (data.length < limit) break;
+      page++;
+      await this.sleep(300);
+    }
+    return all;
+  }
+
   async uploadProductImage(productId: number, imageUrl: string): Promise<void> {
     const token = await this.getAccessToken();
     const url = `${BASE_URL}/produtos/${productId}/imagem`;

@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling } from "@/lib/admin.functions";
+import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download } from "lucide-react";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, syncProdutosFromBling } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -17,11 +17,13 @@ function ProdutosPage() {
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [editing, setEditing] = useState<Produto | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const list = useServerFn(listProdutos);
   const listF = useServerFn(listFornecedores);
   const save = useServerFn(upsertProduto);
   const del = useServerFn(deleteProduto);
   const syncBling = useServerFn(syncProdutoBling);
+  const importFromBling = useServerFn(syncProdutosFromBling);
 
   const load = () => {
     list().then(setRows).catch((e) => toast.error(e.message));
@@ -56,6 +58,30 @@ function ProdutosPage() {
     }
   };
 
+  const onImportBling = async () => {
+    setImporting(true);
+    try {
+      const result = await importFromBling({ data: undefined });
+      if (result.imported > 0) {
+        toast.success(`${result.imported} produto(s) importado(s) do Bling`);
+      }
+      if (result.skipped > 0) {
+        toast.info(`${result.skipped} produto(s) já existente(s) no sistema`);
+      }
+      if (result.errors > 0) {
+        toast.error(`${result.errors} erro(s) na importação`);
+      }
+      if (result.imported === 0 && result.skipped === 0 && result.errors === 0) {
+        toast.info("Nenhum produto encontrado no Bling");
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -63,6 +89,9 @@ function ProdutosPage() {
           <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground">Estoque</p>
           <h1 className="font-serif text-3xl mt-1">Produtos</h1>
         </div>
+        <button onClick={onImportBling} disabled={importing} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
+          <Download className="h-4 w-4" /> {importing ? "Importando..." : "Importar do Bling"}
+        </button>
         <button onClick={() => setEditing({})} className="bg-foreground text-background px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2">
           <Plus className="h-4 w-4" /> Novo
         </button>

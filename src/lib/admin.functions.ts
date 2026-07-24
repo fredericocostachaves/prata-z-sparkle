@@ -267,6 +267,95 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
     return { ok: true, bling_id: blingId, action: existing ? "atualizado" : "criado" };
   });
 
+// ============ SYNC BLING -> SUPABASE ============
+export const syncProdutosFromBling = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+
+    const { bling } = await import("./integrations/bling.server");
+
+    const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
+      .from("bling_tokens")
+      .select("access_token, refresh_token, expires_at")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
+    if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling em Configurações.");
+
+    bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
+
+    if (bling.isExpired) {
+      try {
+        await bling.refreshTokens();
+        await (context.supabase as any).from("bling_tokens").upsert(
+          {
+            user_id: context.userId,
+            access_token: (bling as any).accessToken,
+            refresh_token: (bling as any).refreshToken,
+            expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      } catch (refreshErr: any) {
+        throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
+      }
+    }
+
+    const blingProducts = await bling.listAllProducts();
+
+    if (blingProducts.length === 0) {
+      return { imported: 0, skipped: 0, errors: 0, details: [] };
+    }
+
+    const { data: existingProdutos } = await context.supabase
+      .from("produtos")
+      .select("sku");
+
+    const existingSkus = new Set((existingProdutos ?? []).map((p: any) => p.sku));
+
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+    const details: { sku: string; nome: string; status: string }[] = [];
+
+    for (const bp of blingProducts) {
+      const sku = bp.codigo || `${bp.id}`;
+
+      if (existingSkus.has(sku)) {
+        skipped++;
+        details.push({ sku, nome: bp.nome, status: "ja_existe" });
+        continue;
+      }
+
+      try {
+        const { error } = await context.supabase.from("produtos").insert({
+          sku,
+          nome: bp.nome,
+          preco_venda: Number(bp.preco) || 0,
+          estoque_atual: 0,
+          estoque_minimo: 0,
+          ativo: bp.situacao === "A",
+        });
+
+        if (error) {
+          errors++;
+          details.push({ sku, nome: bp.nome, status: `erro: ${error.message}` });
+        } else {
+          imported++;
+          existingSkus.add(sku);
+          details.push({ sku, nome: bp.nome, status: "importado" });
+        }
+      } catch (err: any) {
+        errors++;
+        details.push({ sku, nome: bp.nome, status: `erro: ${err.message}` });
+      }
+    }
+
+    return { imported, skipped, errors, details };
+  });
+
 // ============ CRUD FORNECEDORES ============
 export const listFornecedores = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
