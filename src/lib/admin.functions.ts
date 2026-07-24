@@ -3,19 +3,74 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function ensureStaff(context: { supabase: any; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-  const { data: isStaff } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "staff" });
+  const { data: roles } = await (context.supabase as any)
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId);
+
+  const roleNames = (roles ?? []).map((r: any) => r.role);
+  const isAdmin = roleNames.includes("admin");
+  const isStaff = roleNames.includes("staff");
   if (!isAdmin && !isStaff) throw new Error("Acesso negado — somente admin/staff.");
-  return { isAdmin: !!isAdmin };
+  return { isAdmin };
 }
 
 // ============ ROLE CHECK ============
 export const getMyRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    const { data: isStaff } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "staff" });
-    return { isAdmin: !!isAdmin, isStaff: !!isStaff };
+    const { data: roles } = await (context.supabase as any)
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+
+    const roleNames = (roles ?? []).map((r: any) => r.role);
+    return {
+      isAdmin: roleNames.includes("admin"),
+      isStaff: roleNames.includes("staff"),
+    };
+  });
+
+export const promoteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    user_id: z.string().uuid(),
+    role: z.enum(["admin", "staff", "cliente"]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const { error } = await context.supabase.rpc("promote_user", {
+      _user_id: data.user_id,
+      _role: data.role,
+    });
+    if (error) throw new Error(`Erro ao promover usuário: ${error.message}`);
+    return { ok: true };
+  });
+
+export const listUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("user_id, role");
+    const { data: profiles } = await context.supabase
+      .from("profiles")
+      .select("id, email, full_name");
+
+    const roleMap = new Map<string, string[]>();
+    for (const r of roles ?? []) {
+      const list = roleMap.get(r.user_id) ?? [];
+      list.push(r.role);
+      roleMap.set(r.user_id, list);
+    }
+
+    return (profiles ?? []).map((p: any) => ({
+      id: p.id,
+      email: p.email,
+      full_name: p.full_name,
+      roles: roleMap.get(p.id) ?? [],
+    }));
   });
 
 // ============ BLING OAUTH ============
