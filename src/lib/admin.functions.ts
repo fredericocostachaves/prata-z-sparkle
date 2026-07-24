@@ -235,14 +235,25 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
 
     const existing = await bling.searchProduct(produto.sku);
 
-    const payload = {
+    const payload: any = {
       nome: produto.nome,
       codigo: produto.sku,
       tipo: "P",
       formato: "S",
       preco: Number(produto.preco_venda),
-      situacao: "Ativo",
+      situacao: "A",
     };
+
+    // Add cover image if available (Bling API v3 format)
+    const produtoAny = produto as any;
+    if (produtoAny.imagem_url) {
+      payload.midia = {
+        video: { url: "" },
+        imagens: {
+          imagensURL: [{ link: produtoAny.imagem_url }],
+        },
+      };
+    }
 
     let result: any;
     if (existing) {
@@ -252,16 +263,6 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
     }
 
     const blingId = result?.data?.id ?? existing?.id;
-    const produtoAny = produto as any;
-    
-    // Upload cover image if available
-    if (blingId && produtoAny.imagem_url) {
-      try {
-        await bling.uploadProductImage(blingId, produtoAny.imagem_url);
-      } catch (imgErr: any) {
-        console.error("[syncProdutoBling] Erro ao enviar imagem:", imgErr.message);
-      }
-    }
 
     return { ok: true, bling_id: blingId, action: existing ? "atualizado" : "criado" };
   });

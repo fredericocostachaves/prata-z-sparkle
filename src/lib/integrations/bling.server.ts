@@ -254,16 +254,7 @@ class BlingClient {
     });
   }
 
-  async createProduct(product: {
-    codigo: string;
-    nome: string;
-    preco: number;
-    tipo?: string;
-    situacao?: string;
-    estoque?: {
-      saldo?: number;
-    };
-  }) {
+  async createProduct(product: any) {
     return this.request('/produtos', {
       method: 'POST',
       body: JSON.stringify(product),
@@ -273,14 +264,7 @@ class BlingClient {
     });
   }
 
-  async updateProduct(blingId: number, product: {
-    codigo?: string;
-    nome?: string;
-    preco?: number;
-    estoque?: {
-      saldo?: number;
-    };
-  }) {
+  async updateProduct(blingId: number, product: any) {
     return this.request(`/produtos/${blingId}`, {
       method: 'PUT',
       body: JSON.stringify(product),
