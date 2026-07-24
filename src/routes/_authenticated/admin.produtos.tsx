@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, countProdutosCadastrados, updateStockBlingBatch } from "@/lib/admin.functions";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -14,6 +14,7 @@ type Produto = any;
 
 type SyncProgress = {
   phase: "idle" | "counting" | "importing" | "done" | "error";
+  action: "import" | "stock";
   current: number;
   total: number;
   imported: number;
@@ -22,10 +23,19 @@ type SyncProgress = {
   error?: string;
 };
 
+const ACTION_LABELS = {
+  import: { counting: "Buscando produtos no Bling...", importing: "Importando produtos...", done: "Importação concluída" },
+  stock: { counting: "Consultando estoque no Bling...", importing: "Atualizando estoque...", done: "Estoque atualizado" },
+};
+
 function SyncOverlay({ progress }: { progress: SyncProgress }) {
   if (progress.phase === "idle" || progress.phase === "done") return null;
 
+  const labels = ACTION_LABELS[progress.action];
   const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+
+  const importedLabel = progress.action === "stock" ? "atualizados" : "importados";
+  const skippedLabel = progress.action === "stock" ? "sem correspondência" : "já existentes";
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
@@ -34,13 +44,13 @@ function SyncOverlay({ progress }: { progress: SyncProgress }) {
           {progress.phase === "counting" && (
             <>
               <div className="animate-spin rounded-full h-10 w-10 border-2 border-muted border-t-foreground mx-auto" />
-              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Buscando produtos no Bling...</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">{labels.counting}</p>
             </>
           )}
           {progress.phase === "importing" && (
             <>
               <div className="text-4xl font-serif">{pct}%</div>
-              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Importando produtos...</p>
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">{labels.importing}</p>
               <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-foreground h-2 rounded-full transition-all duration-300"
@@ -51,8 +61,8 @@ function SyncOverlay({ progress }: { progress: SyncProgress }) {
                 {progress.current} / {progress.total} processados
               </p>
               <div className="flex justify-center gap-4 text-xs">
-                {progress.imported > 0 && <span className="text-green-600">{progress.imported} importados</span>}
-                {progress.skipped > 0 && <span className="text-muted-foreground">{progress.skipped} já existentes</span>}
+                {progress.imported > 0 && <span className="text-green-600">{progress.imported} {importedLabel}</span>}
+                {progress.skipped > 0 && <span className="text-muted-foreground">{progress.skipped} {skippedLabel}</span>}
                 {progress.errors > 0 && <span className="text-red-600">{progress.errors} erros</span>}
               </div>
             </>
@@ -60,7 +70,7 @@ function SyncOverlay({ progress }: { progress: SyncProgress }) {
           {progress.phase === "error" && (
             <>
               <div className="text-red-600 text-xl">✕</div>
-              <p className="text-sm text-red-600">{progress.error || "Erro na importação"}</p>
+              <p className="text-sm text-red-600">{progress.error || "Erro na operação"}</p>
             </>
           )}
         </div>
@@ -76,6 +86,7 @@ function ProdutosPage() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [progress, setProgress] = useState<SyncProgress>({
     phase: "idle",
+    action: "import",
     current: 0,
     total: 0,
     imported: 0,
@@ -89,7 +100,6 @@ function ProdutosPage() {
   const syncBling = useServerFn(syncProdutoBling);
   const getCount = useServerFn(countBlingProducts);
   const importBatch = useServerFn(importBlingBatch);
-  const getCadastrados = useServerFn(countProdutosCadastrados);
   const updateStockBatch = useServerFn(updateStockBlingBatch);
 
   const load = useCallback(() => {
@@ -127,18 +137,18 @@ function ProdutosPage() {
   };
 
   const onImportBling = async () => {
-    setProgress({ phase: "counting", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+    setProgress({ phase: "counting", action: "import", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
 
     try {
       const { total } = await getCount({ data: undefined });
 
       if (total === 0) {
         toast.info("Nenhum produto encontrado no Bling");
-        setProgress({ phase: "idle", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+        setProgress({ phase: "idle", action: "import", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
         return;
       }
 
-      setProgress({ phase: "importing", current: 0, total, imported: 0, skipped: 0, errors: 0 });
+      setProgress({ phase: "importing", action: "import", current: 0, total, imported: 0, skipped: 0, errors: 0 });
 
       const batchSize = 50;
       const pages = Math.ceil(total / batchSize);
@@ -154,6 +164,7 @@ function ProdutosPage() {
 
         setProgress({
           phase: "importing",
+          action: "import",
           current: Math.min(page * batchSize, total),
           total,
           imported,
@@ -162,7 +173,7 @@ function ProdutosPage() {
         });
       }
 
-      setProgress({ phase: "done", current: total, total, imported, skipped, errors });
+      setProgress({ phase: "done", action: "import", current: total, total, imported, skipped, errors });
 
       if (imported > 0) toast.success(`${imported} produto(s) importado(s) do Bling`);
       if (skipped > 0) toast.info(`${skipped} produto(s) já existente(s)`);
@@ -171,25 +182,25 @@ function ProdutosPage() {
 
       load();
     } catch (e: any) {
-      setProgress({ phase: "error", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
+      setProgress({ phase: "error", action: "import", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
       toast.error(e.message);
       setTimeout(() => setProgress((p) => p.phase === "error" ? { ...p, phase: "idle" } : p), 3000);
     }
   };
 
   const onUpdateStockBling = async () => {
-    setProgress({ phase: "counting", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+    setProgress({ phase: "counting", action: "stock", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
 
     try {
-      const { total } = await getCadastrados({ data: undefined });
+      const { total } = await getCount({ data: undefined });
 
       if (total === 0) {
-        toast.info("Nenhum produto cadastrado no sistema");
-        setProgress({ phase: "idle", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+        toast.info("Nenhum produto encontrado no Bling");
+        setProgress({ phase: "idle", action: "stock", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
         return;
       }
 
-      setProgress({ phase: "importing", current: 0, total, imported: 0, skipped: 0, errors: 0 });
+      setProgress({ phase: "importing", action: "stock", current: 0, total, imported: 0, skipped: 0, errors: 0 });
 
       const batchSize = 50;
       const pages = Math.ceil(total / batchSize);
@@ -205,6 +216,7 @@ function ProdutosPage() {
 
         setProgress({
           phase: "importing",
+          action: "stock",
           current: Math.min(page * batchSize, total),
           total,
           imported: updated,
@@ -213,15 +225,15 @@ function ProdutosPage() {
         });
       }
 
-      setProgress({ phase: "done", current: total, total, imported: updated, skipped: notFound, errors });
+      setProgress({ phase: "done", action: "stock", current: total, total, imported: updated, skipped: notFound, errors });
 
       if (updated > 0) toast.success(`Estoque atualizado de ${updated} produto(s)`);
-      if (notFound > 0) toast.info(`${notFound} produto(s) não encontrado(s) no Bling`);
+      if (notFound > 0) toast.info(`${notFound} produto(s) sem correspondência no Bling`);
       if (errors > 0) toast.error(`${errors} erro(s) na atualização`);
 
       load();
     } catch (e: any) {
-      setProgress({ phase: "error", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
+      setProgress({ phase: "error", action: "stock", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
       toast.error(e.message);
       setTimeout(() => setProgress((p) => p.phase === "error" ? { ...p, phase: "idle" } : p), 3000);
     }
