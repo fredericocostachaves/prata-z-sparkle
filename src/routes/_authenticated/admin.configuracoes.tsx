@@ -45,22 +45,21 @@ function ConfiguracoesPage() {
       exchangeCode({ data: { code: bling_code, state: bling_state } })
         .then(() => {
           toast.success("Bling conectado com sucesso!");
-          checkStatus();
           window.history.replaceState({}, "", "/admin/configuracoes");
+          checkStatus();
         })
         .catch((e: any) => {
           toast.error(e.message || "Erro ao autorizar Bling");
-          setExchanging(false);
           window.history.replaceState({}, "", "/admin/configuracoes");
-        });
+        })
+        .finally(() => setExchanging(false));
     }
   }, [bling_code]);
 
   const handleConnectBling = async () => {
     try {
       const { url } = await fetchAuthUrl();
-      window.open(url, "_blank");
-      toast.success("Autorize o app no Bling na janela aberta");
+      window.location.href = url;
     } catch (e: any) {
       toast.error(e.message);
     }
