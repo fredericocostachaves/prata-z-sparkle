@@ -460,11 +460,13 @@ export const updateStockBlingBatch = createServerFn({ method: "POST" })
 
     const { data: existingProdutos } = await context.supabase
       .from("produtos")
-      .select("id, sku");
+      .select("id, sku, nome");
 
     const skuToId = new Map<string, string>();
+    const nomeToId = new Map<string, string>();
     for (const p of existingProdutos ?? []) {
       skuToId.set(p.sku, p.id);
+      if (p.nome) nomeToId.set(p.nome.toLowerCase().trim(), p.id);
     }
 
     let updated = 0;
@@ -472,8 +474,12 @@ export const updateStockBlingBatch = createServerFn({ method: "POST" })
     let errors = 0;
 
     for (const bp of blingProducts) {
-      const sku = bp.codigo || `${bp.id}`;
-      const supabaseId = skuToId.get(sku);
+      const sku = (bp.codigo || "").trim();
+      let supabaseId = sku ? skuToId.get(sku) : undefined;
+
+      if (!supabaseId && bp.nome) {
+        supabaseId = nomeToId.get(bp.nome.toLowerCase().trim());
+      }
 
       if (!supabaseId) {
         notFound++;
@@ -499,6 +505,33 @@ export const updateStockBlingBatch = createServerFn({ method: "POST" })
     }
 
     return { updated, notFound, errors, processed: blingProducts.length };
+  });
+
+export const syncProdutoEstoqueBling = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ produto_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const bling = await ensureBlingTokens(context);
+
+    const { data: produto, error: prodErr } = await context.supabase
+      .from("produtos")
+      .select("id, sku, nome")
+      .eq("id", data.produto_id)
+      .single();
+
+    if (prodErr || !produto) throw new Error("Produto não encontrado.");
+
+    const estoque = await bling.getProductStock(produto.sku);
+
+    const { error } = await context.supabase
+      .from("produtos")
+      .update({ estoque_atual: estoque })
+      .eq("id", produto.id);
+
+    if (error) throw new Error(`Erro ao atualizar estoque: ${error.message}`);
+
+    return { ok: true, estoque, sku: produto.sku };
   });
 
 // ============ CRUD FORNECEDORES ============

@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch } from "@/lib/admin.functions";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch, syncProdutoEstoqueBling } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -84,6 +84,7 @@ function ProdutosPage() {
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [editing, setEditing] = useState<Produto | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [stockSyncingId, setStockSyncingId] = useState<string | null>(null);
   const [progress, setProgress] = useState<SyncProgress>({
     phase: "idle",
     action: "import",
@@ -98,6 +99,7 @@ function ProdutosPage() {
   const save = useServerFn(upsertProduto);
   const del = useServerFn(deleteProduto);
   const syncBling = useServerFn(syncProdutoBling);
+  const syncEstoqueBling = useServerFn(syncProdutoEstoqueBling);
   const getCount = useServerFn(countBlingProducts);
   const importBatch = useServerFn(importBlingBatch);
   const updateStockBatch = useServerFn(updateStockBlingBatch);
@@ -133,6 +135,19 @@ function ProdutosPage() {
       toast.error(e.message);
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const onSyncEstoque = async (produto: Produto) => {
+    setStockSyncingId(produto.id);
+    try {
+      const result = await syncEstoqueBling({ data: { produto_id: produto.id } });
+      toast.success(`Estoque de ${produto.sku} atualizado: ${result.estoque} un.`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setStockSyncingId(null);
     }
   };
 
@@ -282,6 +297,14 @@ function ProdutosPage() {
                   </td>
                   <td className="text-muted-foreground">{p.fornecedores?.razao_social ?? "—"}</td>
                   <td className="p-3 text-right">
+                    <button
+                      onClick={() => onSyncEstoque(p)}
+                      disabled={stockSyncingId === p.id}
+                      title="Sincronizar estoque com Bling"
+                      className="p-2 hover:bg-secondary rounded disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${stockSyncingId === p.id ? "animate-spin" : ""}`} />
+                    </button>
                     <button
                       onClick={() => onSyncBling(p)}
                       disabled={syncingId === p.id}
