@@ -268,45 +268,63 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
   });
 
 // ============ SYNC BLING -> SUPABASE ============
-export const syncProdutosFromBling = createServerFn({ method: "POST" })
+async function ensureBlingTokens(context: { supabase: any; userId: string }) {
+  const { bling } = await import("./integrations/bling.server");
+
+  const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
+    .from("bling_tokens")
+    .select("access_token, refresh_token, expires_at")
+    .eq("user_id", context.userId)
+    .maybeSingle();
+
+  if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
+  if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling em Configurações.");
+
+  bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
+
+  if (bling.isExpired) {
+    try {
+      await bling.refreshTokens();
+      await (context.supabase as any).from("bling_tokens").upsert(
+        {
+          user_id: context.userId,
+          access_token: (bling as any).accessToken,
+          refresh_token: (bling as any).refreshToken,
+          expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+    } catch (refreshErr: any) {
+      throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
+    }
+  }
+
+  return bling;
+}
+
+export const countBlingProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureStaff(context);
+    const bling = await ensureBlingTokens(context);
+    const products = await bling.listAllProducts();
+    return { total: products.length };
+  });
 
-    const { bling } = await import("./integrations/bling.server");
+export const importBlingBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1).max(100),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const bling = await ensureBlingTokens(context);
 
-    const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
-      .from("bling_tokens")
-      .select("access_token, refresh_token, expires_at")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-
-    if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
-    if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling em Configurações.");
-
-    bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
-
-    if (bling.isExpired) {
-      try {
-        await bling.refreshTokens();
-        await (context.supabase as any).from("bling_tokens").upsert(
-          {
-            user_id: context.userId,
-            access_token: (bling as any).accessToken,
-            refresh_token: (bling as any).refreshToken,
-            expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-      } catch (refreshErr: any) {
-        throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
-      }
-    }
-
-    const blingProducts = await bling.listAllProducts();
+    const { data: blingProducts } = await bling.listProducts(data.page, data.limit);
 
     if (blingProducts.length === 0) {
-      return { imported: 0, skipped: 0, errors: 0, details: [] };
+      return { imported: 0, skipped: 0, errors: 0, processed: 0 };
     }
 
     const { data: existingProdutos } = await context.supabase
@@ -318,14 +336,12 @@ export const syncProdutosFromBling = createServerFn({ method: "POST" })
     let imported = 0;
     let skipped = 0;
     let errors = 0;
-    const details: { sku: string; nome: string; status: string }[] = [];
 
     for (const bp of blingProducts) {
       const sku = bp.codigo || `${bp.id}`;
 
       if (existingSkus.has(sku)) {
         skipped++;
-        details.push({ sku, nome: bp.nome, status: "ja_existe" });
         continue;
       }
 
@@ -341,19 +357,16 @@ export const syncProdutosFromBling = createServerFn({ method: "POST" })
 
         if (error) {
           errors++;
-          details.push({ sku, nome: bp.nome, status: `erro: ${error.message}` });
         } else {
           imported++;
           existingSkus.add(sku);
-          details.push({ sku, nome: bp.nome, status: "importado" });
         }
-      } catch (err: any) {
+      } catch {
         errors++;
-        details.push({ sku, nome: bp.nome, status: `erro: ${err.message}` });
       }
     }
 
-    return { imported, skipped, errors, details };
+    return { imported, skipped, errors, processed: blingProducts.length };
   });
 
 // ============ CRUD FORNECEDORES ============

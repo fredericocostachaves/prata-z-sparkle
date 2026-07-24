@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, syncProdutosFromBling } from "@/lib/admin.functions";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -12,24 +12,90 @@ export const Route = createFileRoute("/_authenticated/admin/produtos")({
 
 type Produto = any;
 
+type SyncProgress = {
+  phase: "idle" | "counting" | "importing" | "done" | "error";
+  current: number;
+  total: number;
+  imported: number;
+  skipped: number;
+  errors: number;
+  error?: string;
+};
+
+function SyncOverlay({ progress }: { progress: SyncProgress }) {
+  if (progress.phase === "idle" || progress.phase === "done") return null;
+
+  const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
+      <div className="bg-background border border-border p-8 max-w-md w-full mx-4 text-center space-y-6">
+        <div className="space-y-2">
+          {progress.phase === "counting" && (
+            <>
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-muted border-t-foreground mx-auto" />
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Buscando produtos no Bling...</p>
+            </>
+          )}
+          {progress.phase === "importing" && (
+            <>
+              <div className="text-4xl font-serif">{pct}%</div>
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Importando produtos...</p>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-foreground h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {progress.current} / {progress.total} processados
+              </p>
+              <div className="flex justify-center gap-4 text-xs">
+                {progress.imported > 0 && <span className="text-green-600">{progress.imported} importados</span>}
+                {progress.skipped > 0 && <span className="text-muted-foreground">{progress.skipped} já existentes</span>}
+                {progress.errors > 0 && <span className="text-red-600">{progress.errors} erros</span>}
+              </div>
+            </>
+          )}
+          {progress.phase === "error" && (
+            <>
+              <div className="text-red-600 text-xl">✕</div>
+              <p className="text-sm text-red-600">{progress.error || "Erro na importação"}</p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProdutosPage() {
   const [rows, setRows] = useState<Produto[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [editing, setEditing] = useState<Produto | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState<SyncProgress>({
+    phase: "idle",
+    current: 0,
+    total: 0,
+    imported: 0,
+    skipped: 0,
+    errors: 0,
+  });
   const list = useServerFn(listProdutos);
   const listF = useServerFn(listFornecedores);
   const save = useServerFn(upsertProduto);
   const del = useServerFn(deleteProduto);
   const syncBling = useServerFn(syncProdutoBling);
-  const importFromBling = useServerFn(syncProdutosFromBling);
+  const getCount = useServerFn(countBlingProducts);
+  const importBatch = useServerFn(importBlingBatch);
 
-  const load = () => {
+  const load = useCallback(() => {
     list().then(setRows).catch((e) => toast.error(e.message));
     listF().then(setFornecedores).catch(() => {});
-  };
-  useEffect(() => { load(); }, []);
+  }, [list, listF]);
+
+  useEffect(() => { load(); }, [load]);
 
   const onSave = async (form: any) => {
     try {
@@ -59,38 +125,67 @@ function ProdutosPage() {
   };
 
   const onImportBling = async () => {
-    setImporting(true);
+    setProgress({ phase: "counting", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+
     try {
-      const result = await importFromBling({ data: undefined });
-      if (result.imported > 0) {
-        toast.success(`${result.imported} produto(s) importado(s) do Bling`);
-      }
-      if (result.skipped > 0) {
-        toast.info(`${result.skipped} produto(s) já existente(s) no sistema`);
-      }
-      if (result.errors > 0) {
-        toast.error(`${result.errors} erro(s) na importação`);
-      }
-      if (result.imported === 0 && result.skipped === 0 && result.errors === 0) {
+      const { total } = await getCount({ data: undefined });
+
+      if (total === 0) {
         toast.info("Nenhum produto encontrado no Bling");
+        setProgress({ phase: "idle", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+        return;
       }
+
+      setProgress({ phase: "importing", current: 0, total, imported: 0, skipped: 0, errors: 0 });
+
+      const batchSize = 50;
+      const pages = Math.ceil(total / batchSize);
+      let imported = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      for (let page = 1; page <= pages; page++) {
+        const result = await importBatch({ data: { page, limit: batchSize } });
+        imported += result.imported;
+        skipped += result.skipped;
+        errors += result.errors;
+
+        setProgress({
+          phase: "importing",
+          current: Math.min(page * batchSize, total),
+          total,
+          imported,
+          skipped,
+          errors,
+        });
+      }
+
+      setProgress({ phase: "done", current: total, total, imported, skipped, errors });
+
+      if (imported > 0) toast.success(`${imported} produto(s) importado(s) do Bling`);
+      if (skipped > 0) toast.info(`${skipped} produto(s) já existente(s)`);
+      if (errors > 0) toast.error(`${errors} erro(s) na importação`);
+      if (imported === 0 && skipped === 0 && errors === 0) toast.info("Nenhum produto novo encontrado");
+
       load();
     } catch (e: any) {
+      setProgress({ phase: "error", current: 0, total: 0, imported: 0, skipped: 0, errors: 0, error: e.message });
       toast.error(e.message);
-    } finally {
-      setImporting(false);
+      setTimeout(() => setProgress((p) => p.phase === "error" ? { ...p, phase: "idle" } : p), 3000);
     }
   };
 
   return (
     <div className="space-y-6">
+      <SyncOverlay progress={progress} />
+
       <header className="flex items-center justify-between">
         <div>
           <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground">Estoque</p>
           <h1 className="font-serif text-3xl mt-1">Produtos</h1>
         </div>
-        <button onClick={onImportBling} disabled={importing} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
-          <Download className="h-4 w-4" /> {importing ? "Importando..." : "Importar do Bling"}
+        <button onClick={onImportBling} disabled={progress.phase !== "idle" && progress.phase !== "done"} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
+          <Download className="h-4 w-4" /> Importar do Bling
         </button>
         <button onClick={() => setEditing({})} className="bg-foreground text-background px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2">
           <Plus className="h-4 w-4" /> Novo
