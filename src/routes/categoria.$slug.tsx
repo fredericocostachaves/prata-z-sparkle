@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
-import { categories, getCategory, type Product } from "@/data/products";
+import { categories, getCategory, getProductsByCategory, type Product } from "@/data/products";
 import { listCategoryProducts } from "@/lib/catalog.functions";
 import type { CatalogProduct, CatalogCategorySlug } from "@/lib/catalog.types";
 import catFallback from "@/assets/cat-colar.jpg";
