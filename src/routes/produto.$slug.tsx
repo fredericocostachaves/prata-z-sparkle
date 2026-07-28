@@ -277,6 +277,58 @@ function ProductPage() {
               ))}
             </ul>
 
+            {remote && remote.variations.length > 0 && (
+              <div className="mt-10">
+                <p className="text-[11px] tracking-[0.3em] uppercase text-foreground/70 mb-3">
+                  Variações disponíveis
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {remote.variations.map((v) => (
+                    <span
+                      key={v.id || v.sku}
+                      className="border border-border px-4 py-2 text-sm text-muted-foreground"
+                    >
+                      {v.name || v.sku}
+                      {v.stock > 0 ? ` · ${v.stock} un.` : " · esgotado"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {remote && (remote.attributes.length > 0 || remote.weightG || remote.dimensions) && (
+              <div className="mt-10 border-t border-border pt-8">
+                <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">
+                  Características
+                </p>
+                <dl className="mt-4 divide-y divide-border text-sm">
+                  {remote.attributes.map((a) => (
+                    <div key={a.label} className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">{a.label}</dt>
+                      <dd className="text-foreground text-right">{a.value}</dd>
+                    </div>
+                  ))}
+                  {remote.weightG ? (
+                    <div className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">Peso</dt>
+                      <dd className="text-foreground">{remote.weightG} g</dd>
+                    </div>
+                  ) : null}
+                  {remote.dimensions &&
+                  (remote.dimensions.height || remote.dimensions.width || remote.dimensions.length) ? (
+                    <div className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">Dimensões (A×L×C)</dt>
+                      <dd className="text-foreground">
+                        {[remote.dimensions.height, remote.dimensions.width, remote.dimensions.length]
+                          .map((n) => (n ? `${n}` : "—"))
+                          .join(" × ")} cm
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
+            )}
+
             <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8">
               <div className="text-center">
                 <Truck className="h-5 w-5 mx-auto text-nude-deep" strokeWidth={1.5} />
