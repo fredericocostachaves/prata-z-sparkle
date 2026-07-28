@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SacolaRouteImport } from './routes/sacola'
 import { Route as PoliticaTrocaRouteImport } from './routes/politica-troca'
@@ -56,6 +57,11 @@ const TermosRoute = TermosRouteImport.update({
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShowroomRoute = ShowroomRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/politica-troca': typeof PoliticaTrocaRoute
   '/sacola': typeof SacolaRoute
   '/showroom': typeof ShowroomRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/politica-troca'
     | '/sacola'
     | '/showroom'
+    | '/sitemap.xml'
     | '/sobre'
     | '/termos'
     | '/admin'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/politica-troca'
     | '/sacola'
     | '/showroom'
+    | '/sitemap.xml'
     | '/sobre'
     | '/termos'
     | '/blog/$slug'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/politica-troca'
     | '/sacola'
     | '/showroom'
+    | '/sitemap.xml'
     | '/sobre'
     | '/termos'
     | '/_authenticated/admin'
@@ -502,6 +514,7 @@ export interface RootRouteChildren {
   PoliticaTrocaRoute: typeof PoliticaTrocaRoute
   SacolaRoute: typeof SacolaRoute
   ShowroomRoute: typeof ShowroomRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
   TermosRoute: typeof TermosRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
@@ -524,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/sobre'
       fullPath: '/sobre'
       preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/showroom': {
@@ -897,6 +917,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaTrocaRoute: PoliticaTrocaRoute,
   SacolaRoute: SacolaRoute,
   ShowroomRoute: ShowroomRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
   TermosRoute: TermosRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
