@@ -244,7 +244,7 @@ function ProductPage() {
           <span className="text-foreground">{product.name}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
+        <article className="grid lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Gallery */}
           <div>
             <div className="aspect-square bg-secondary rounded-sm overflow-hidden">
