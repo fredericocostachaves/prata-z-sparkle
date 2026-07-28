@@ -38,6 +38,8 @@ export interface Product {
   tag?: string;
   isNew?: boolean;
   bestSeller?: boolean;
+  /** Quantidade disponível em estoque (Bling). Quando definido, é exibido no card. */
+  stock?: number;
 }
 
 export const categories: Category[] = [
