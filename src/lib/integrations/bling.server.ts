@@ -91,6 +91,10 @@ class BlingClient {
     this.tokenExpiresAt = expiresAt;
   }
 
+  get hasTokens(): boolean {
+    return Boolean(this.accessToken || this.refreshToken);
+  }
+
   get isExpired(): boolean {
     return Date.now() >= this.tokenExpiresAt - 60_000;
   }

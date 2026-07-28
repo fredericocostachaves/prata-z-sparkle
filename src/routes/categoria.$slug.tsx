@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
-import { categories, getCategory, type Product } from "@/data/products";
+import { categories, getCategory, getProductsByCategory, type Product } from "@/data/products";
 import { listCategoryProducts } from "@/lib/catalog.functions";
 import type { CatalogProduct, CatalogCategorySlug } from "@/lib/catalog.types";
 import catFallback from "@/assets/cat-colar.jpg";
@@ -75,13 +75,30 @@ function CategoryPage() {
     placeholderData: (prev) => prev,
   });
 
+  const remote = data?.products ?? [];
+  // Fallback: se a integração falhar (ou não houver retorno), mostramos o catálogo local
+  const useFallback =
+    isError || data?.source === "fallback" || (!isPending && remote.length === 0);
+
+  const notice =
+    isError || data?.source === "fallback"
+      ? "Não foi possível conectar ao catálogo agora. Exibindo peças de exemplo enquanto normalizamos a integração."
+      : data?.warning === "bling_nao_configurado"
+        ? "Integração com o Bling ainda não configurada — os saldos exibidos são os do nosso banco de dados."
+        : data?.warning === "bling_indisponivel"
+          ? "Estoque em tempo real do Bling temporariamente indisponível — exibindo os saldos do nosso banco de dados."
+          : null;
+
   const list = useMemo(() => {
-    const arr = (data ?? []).map(toProduct);
-    if (sort === "menor") arr.sort((a, b) => a.price - b.price);
-    if (sort === "maior") arr.sort((a, b) => b.price - a.price);
-    if (sort === "novos") arr.sort((a, b) => a.name.localeCompare(b.name));
-    return arr;
-  }, [data, sort]);
+    const arr: Product[] = useFallback
+      ? getProductsByCategory(slug)
+      : remote.map(toProduct);
+    const sorted = [...arr];
+    if (sort === "menor") sorted.sort((a, b) => a.price - b.price);
+    if (sort === "maior") sorted.sort((a, b) => b.price - a.price);
+    if (sort === "novos") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    return sorted;
+  }, [remote, sort, useFallback, slug]);
 
   if (!cat) {
     return (
@@ -99,6 +116,12 @@ function CategoryPage() {
   return (
     <PageShell eyebrow="Catálogo" title={cat.name} subtitle={cat.description}>
       <section className="mx-auto max-w-7xl px-6 sm:px-10 py-12 md:py-16">
+        {notice && !isPending && (
+          <div className="mb-8 rounded-sm border border-nude/40 bg-nude/10 px-5 py-4 text-sm text-muted-foreground">
+            {notice}
+          </div>
+        )}
+
         {/* Filter row */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
           <p className="text-sm text-muted-foreground">
@@ -128,10 +151,6 @@ function CategoryPage() {
               <CardSkeleton key={i} />
             ))}
           </div>
-        ) : isError ? (
-          <div className="text-center py-16 text-muted-foreground">
-            Não foi possível carregar as peças agora. Tente novamente em instantes.
-          </div>
         ) : list.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             Em breve novidades nesta categoria.
@@ -143,6 +162,7 @@ function CategoryPage() {
             ))}
           </div>
         )}
+
 
         {/* Other categories */}
         <div className="mt-24 border-t border-border pt-12">
