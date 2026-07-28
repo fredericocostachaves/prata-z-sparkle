@@ -6,29 +6,73 @@ import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { categories, getCategory, getProductsByCategory, type Product } from "@/data/products";
 import { listCategoryProducts } from "@/lib/catalog.functions";
-import type { CatalogProduct, CatalogCategorySlug } from "@/lib/catalog.types";
+import { CATEGORY_SLUGS, type CatalogProduct, type CatalogCategorySlug, type CatalogResult } from "@/lib/catalog.types";
+import { SITE_URL, categoryJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import catFallback from "@/assets/cat-colar.jpg";
 
+const EMPTY_RESULT: CatalogResult = { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+
 export const Route = createFileRoute("/categoria/$slug")({
-  head: ({ params }) => {
+  loader: async ({ params }): Promise<CatalogResult> => {
+    if (!(CATEGORY_SLUGS as readonly string[]).includes(params.slug)) return EMPTY_RESULT;
+    try {
+      return await listCategoryProducts({ data: { slug: params.slug as CatalogCategorySlug } });
+    } catch {
+      return EMPTY_RESULT;
+    }
+  },
+  head: ({ params, loaderData }) => {
     const cat = getCategory(params.slug);
+    const name = cat?.name ?? "Catálogo";
     const title = cat
-      ? `${cat.name} em prata 925 — Prata Z Joias`
-      : "Categoria — Prata Z Joias";
+      ? `Comprar ${cat.name} de Prata 925 Femininos | Prata Z Joias`
+      : "Catálogo de joias em prata 925 | Prata Z Joias";
     const desc = cat
-      ? `${cat.description}. Alta joalheria em prata 925 com atendimento personalizado.`
-      : "Catálogo Prata Z Joias.";
+      ? `${cat.name} em prata 925 legítima com garantia de autenticidade, parcelamento e envio para todo o Brasil. Alta joalheria com atendimento personalizado na Prata Z Joias.`
+      : "Alta joalheria em prata 925 com atendimento personalizado. Colares, brincos, anéis, pulseiras e mais.";
+    const path = `/categoria/${params.slug}`;
+    const url = `${SITE_URL}${path}`;
+    const products = loaderData?.products ?? [];
+    const cover = products.find((p) => p.image)?.image ?? null;
+
     return {
       meta: [
         { title },
         { name: "description", content: desc },
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+        ...(cover
+          ? [
+              { property: "og:image", content: cover },
+              { name: "twitter:image", content: cover },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(categoryJsonLd(name, path, products)),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Início", path: "/" },
+              { name, path },
+            ]),
+          ),
+        },
       ],
     };
   },
   component: CategoryPage,
 });
+
 
 type Sort = "destaques" | "menor" | "maior" | "novos";
 
@@ -63,6 +107,7 @@ function CardSkeleton() {
 
 function CategoryPage() {
   const { slug } = Route.useParams();
+  const initial = Route.useLoaderData();
   const cat = getCategory(slug);
   const [sort, setSort] = useState<Sort>("destaques");
   const fetchProducts = useServerFn(listCategoryProducts);
@@ -72,8 +117,10 @@ function CategoryPage() {
     queryFn: () => fetchProducts({ data: { slug: slug as CatalogCategorySlug } }),
     enabled: Boolean(cat),
     staleTime: 60_000,
+    initialData: initial,
     placeholderData: (prev) => prev,
   });
+
 
   const remote = data?.products ?? [];
   // Fallback: se a integração falhar (ou não houver retorno), mostramos o catálogo local
