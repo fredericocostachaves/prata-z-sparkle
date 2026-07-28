@@ -7,27 +7,114 @@ import { formatInstallment, formatPrice, getProductBySlug, getProductsByCategory
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { getProductDetail } from "@/lib/catalog.functions";
+import type { CatalogDetailResult } from "@/lib/catalog.types";
+import { SITE_URL, productJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import catFallback from "@/assets/cat-colar.jpg";
 
+const EMPTY_DETAIL: CatalogDetailResult = {
+  product: null,
+  source: "fallback",
+  warning: "catalogo_indisponivel",
+};
+
 export const Route = createFileRoute("/produto/$slug")({
-  head: ({ params }) => {
-    const p = getProductBySlug(params.slug);
-    const title = p ? `${p.name} — Prata Z Joias` : "Produto — Prata Z Joias";
-    const desc = p ? p.description : "Joia em prata 925 com atendimento personalizado.";
+  loader: async ({ params }): Promise<CatalogDetailResult> => {
+    try {
+      return await getProductDetail({ data: { slug: params.slug } });
+    } catch {
+      return EMPTY_DETAIL;
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const remote = loaderData?.product ?? null;
+    const local = getProductBySlug(params.slug);
+    const name = remote?.name ?? local?.name ?? null;
+    const description =
+      remote?.description ??
+      local?.description ??
+      "Joia em prata 925 legítima com garantia de autenticidade e atendimento personalizado.";
+    const price = remote?.price ?? local?.price ?? null;
+    const stock = remote?.stock ?? local?.stock ?? 0;
+    const image = remote?.gallery?.[0] ?? remote?.image ?? local?.images?.[0] ?? null;
+    const title = name
+      ? `Comprar ${name} em Prata 925 | Prata Z Joias`
+      : "Produto — Prata Z Joias";
+    const path = `/produto/${params.slug}`;
+    const url = `${SITE_URL}${path}`;
+    const category = remote?.category ?? local?.category ?? null;
+
     return {
       meta: [
         { title },
-        { name: "description", content: desc },
+        { name: "description", content: description.slice(0, 158) },
         { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        ...(p ? [{ property: "og:image", content: p.images[0] }] : []),
+        { property: "og:description", content: description.slice(0, 158) },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description.slice(0, 158) },
+        ...(image
+          ? [
+              { property: "og:image", content: image },
+              { name: "twitter:image", content: image },
+            ]
+          : []),
+        ...(price
+          ? [
+              { property: "og:price:amount", content: Number(price).toFixed(2) },
+              { property: "og:price:currency", content: "BRL" },
+              { property: "product:price:amount", content: Number(price).toFixed(2) },
+              { property: "product:price:currency", content: "BRL" },
+              {
+                property: "product:availability",
+                content: stock >= 1 ? "in stock" : "out of stock",
+              },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        ...(name
+          ? [
+              {
+                type: "application/ld+json",
+                children: JSON.stringify(
+                  productJsonLd(
+                    remote ?? {
+                      id: local?.id ?? params.slug,
+                      sku: local?.id ?? params.slug,
+                      name,
+                      price: price ?? 0,
+                      stock,
+                      image,
+                      gallery: local?.images ?? [],
+                      description,
+                      category: category ?? "",
+                    },
+                    path,
+                  ),
+                ),
+              },
+            ]
+          : []),
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Início", path: "/" },
+              ...(category ? [{ name: category, path: `/categoria/${category}` }] : []),
+              ...(name ? [{ name, path }] : []),
+            ]),
+          ),
+        },
       ],
     };
   },
   component: ProductPage,
 });
+
 
 function DetailSkeleton() {
   return (
