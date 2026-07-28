@@ -1,4 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
@@ -80,14 +81,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <CartProvider>
-      <FavoritesProvider>
-        <Outlet />
-        <Toaster />
-        <CookieConsent />
-        {/* Bot Conversa widget slot — substituir pelo script do widget quando integrado */}
-        <div id="botconversa-widget" />
-      </FavoritesProvider>
-    </CartProvider>
+    <QueryClientProvider client={queryClient}>
+      <CartProvider>
+        <FavoritesProvider>
+          <Outlet />
+          <Toaster />
+          <CookieConsent />
+          {/* Bot Conversa widget slot — substituir pelo script do widget quando integrado */}
+          <div id="botconversa-widget" />
+        </FavoritesProvider>
+      </CartProvider>
+    </QueryClientProvider>
   );
 }
