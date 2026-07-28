@@ -66,6 +66,11 @@ export function ProductCard({ product, index = 0 }: Props) {
           </h3>
         </Link>
         <p className="mt-2 text-base md:text-lg text-foreground font-serif">{formatPrice(product.price)}</p>
+        {typeof product.stock === "number" && (
+          <p className="mt-1.5 text-[11px] tracking-[0.18em] uppercase text-muted-foreground">
+            {product.stock} {product.stock === 1 ? "disponível" : "disponíveis"}
+          </p>
+        )}
       </div>
     </article>
   );
