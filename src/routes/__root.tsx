@@ -7,6 +7,10 @@ import { CookieConsent } from "@/components/CookieConsent";
 
 import appCss from "../styles.css?url";
 
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
+});
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
