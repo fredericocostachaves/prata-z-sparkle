@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      bling_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           auth_user_id: string | null
@@ -221,7 +251,9 @@ export type Database = {
           estoque_atual: number
           estoque_minimo: number
           fornecedor_id: string | null
+          galeria_urls: string[] | null
           id: string
+          imagem_url: string | null
           largura_cm: number | null
           nome: string
           peso_g: number | null
@@ -239,7 +271,9 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fornecedor_id?: string | null
+          galeria_urls?: string[] | null
           id?: string
+          imagem_url?: string | null
           largura_cm?: number | null
           nome: string
           peso_g?: number | null
@@ -257,7 +291,9 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fornecedor_id?: string | null
+          galeria_urls?: string[] | null
           id?: string
+          imagem_url?: string | null
           largura_cm?: number | null
           nome?: string
           peso_g?: number | null
@@ -332,6 +368,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      promote_user: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
