@@ -4,6 +4,7 @@ import type { Product } from "@/data/products";
 import { formatPrice } from "@/data/products";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
+import { useReveal } from "@/hooks/useScrollReveal";
 
 interface Props {
   product: Product;
