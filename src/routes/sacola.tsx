@@ -38,7 +38,16 @@ function SacolaPage() {
           {cart.items.map((it) => (
             <div key={it.productId + (it.size ?? "")} className="flex gap-5 border-b border-border pb-6">
               <Link to="/produto/$slug" params={{ slug: it.slug }} className="block w-28 h-28 bg-secondary shrink-0">
-                <img src={it.image} alt={it.name} className="h-full w-full object-cover" />
+                <img
+                  src={it.image}
+                  alt={it.name}
+                  loading="lazy"
+                  decoding="async"
+                  width="112"
+                  height="112"
+                  sizes="112px"
+                  className="h-full w-full object-cover"
+                />
               </Link>
               <div className="flex-1">
                 <Link to="/produto/$slug" params={{ slug: it.slug }} className="font-serif text-lg text-foreground hover:text-nude-deep">
