@@ -8,8 +8,13 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
   .handler(async ({ data }): Promise<CatalogResult> => {
     try {
-      const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-      const supabase = createClient<Database>(process.env.SUPABASE_URL!, key, {
+      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+      if (!key || !url) {
+        console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
+        return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+      }
+      const supabase = createClient<Database>(url, key, {
         auth: { persistSession: false },
         global: {
           fetch: (input, init) => {
@@ -23,6 +28,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         },
       });
 
+      console.log(`[Catalogo] Consultando categoria "${data.slug}"...`);
       const { data: rows, error } = await supabase
         .from("produtos")
         .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
@@ -32,8 +38,16 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         .order("nome");
 
       if (error) {
-        console.error("[Catalogo] Erro ao listar produtos:", error.message);
+        console.error(`[Catalogo] Erro ao listar produtos (categoria: ${data.slug}):`, error.message);
         return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+      }
+
+      console.log(`[Catalogo] Encontrados ${rows?.length ?? 0} produtos para "${data.slug}"`);
+
+      // Se não houver produtos no banco, usar fallback
+      if (!rows || rows.length === 0) {
+        console.log(`[Catalogo] Nenhum produto encontrado para "${data.slug}" no banco, retornando fallback`);
+        return { products: [], source: "fallback", warning: null };
       }
 
       // Saldo em tempo real do Bling quando as credenciais estiverem configuradas
@@ -72,8 +86,13 @@ export const getProductDetail = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }): Promise<CatalogDetailResult> => {
     try {
-      const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-      const supabase = createClient<Database>(process.env.SUPABASE_URL!, key, {
+      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+      if (!key || !url) {
+        console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
+        return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
+      }
+      const supabase = createClient<Database>(url, key, {
         auth: { persistSession: false },
         global: {
           fetch: (input, init) => {

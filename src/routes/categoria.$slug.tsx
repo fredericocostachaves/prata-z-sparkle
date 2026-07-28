@@ -112,18 +112,21 @@ function CategoryPage() {
   const [sort, setSort] = useState<Sort>("destaques");
   const fetchProducts = useServerFn(listCategoryProducts);
 
-  const { data, isPending, isError } = useQuery({
+  const { data, isPending, isError, isLoading } = useQuery({
     queryKey: ["catalogo", slug],
     queryFn: () => fetchProducts({ data: { slug: slug as CatalogCategorySlug } }),
     enabled: Boolean(cat),
     staleTime: 60_000,
     initialData: initial,
     placeholderData: (prev) => prev,
+    retry: 1,
+    retryDelay: 3_000,
+    gcTime: 0,
   });
 
 
   const remote = data?.products ?? [];
-  // Fallback: se a integração falhar (ou não houver retorno), mostramos o catálogo local
+  // Fallback: se a integração falhar, demorar muito ou não houver retorno, mostramos o catálogo local
   const useFallback =
     isError || data?.source === "fallback" || (!isPending && remote.length === 0);
 
@@ -134,18 +137,22 @@ function CategoryPage() {
         ? "Integração com o Bling ainda não configurada — os saldos exibidos são os do nosso banco de dados."
         : data?.warning === "bling_indisponivel"
           ? "Estoque em tempo real do Bling temporariamente indisponível — exibindo os saldos do nosso banco de dados."
-          : null;
+          : !isPending && remote.length === 0 && list.length > 0
+            ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
+            : null;
+
+  const fallbackProducts = useMemo(() => getProductsByCategory(slug), [slug]);
 
   const list = useMemo(() => {
     const arr: Product[] = useFallback
-      ? getProductsByCategory(slug)
+      ? fallbackProducts
       : remote.map(toProduct);
     const sorted = [...arr];
     if (sort === "menor") sorted.sort((a, b) => a.price - b.price);
     if (sort === "maior") sorted.sort((a, b) => b.price - a.price);
     if (sort === "novos") sorted.sort((a, b) => a.name.localeCompare(b.name));
     return sorted;
-  }, [remote, sort, useFallback, slug]);
+  }, [remote, sort, useFallback, fallbackProducts]);
 
   if (!cat) {
     return (
