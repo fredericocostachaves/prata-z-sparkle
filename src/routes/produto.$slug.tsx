@@ -135,6 +135,7 @@ function DetailSkeleton() {
 
 function ProductPage() {
   const { slug } = Route.useParams();
+  const initial = Route.useLoaderData();
   const local = getProductBySlug(slug);
   const navigate = useNavigate();
   const cart = useCart();
@@ -147,7 +148,9 @@ function ProductPage() {
     queryKey: ["produto", slug],
     queryFn: () => fetchDetail({ data: { slug } }),
     staleTime: 60_000,
+    initialData: initial,
     retry: 1,
+
   });
 
   const remote = data?.product ?? null;
