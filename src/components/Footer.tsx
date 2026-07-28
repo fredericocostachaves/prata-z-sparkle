@@ -37,6 +37,10 @@ export function Footer() {
             <img
               src={logo}
               alt="Prata Z Joias"
+              loading="lazy"
+              decoding="async"
+              width="160"
+              height="64"
               className="h-16 w-auto object-contain brightness-0 invert"
             />
             <p className="text-[10px] tracking-[0.45em] uppercase text-background/60 mt-3">

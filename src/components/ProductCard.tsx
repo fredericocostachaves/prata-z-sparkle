@@ -26,10 +26,12 @@ export function ProductCard({ product, index = 0 }: Props) {
           <img
             src={product.images[0]}
             alt={product.name}
-            loading="lazy"
+            loading={index < 4 ? "eager" : "lazy"}
+            fetchPriority={index === 0 ? "high" : index < 4 ? "auto" : "low"}
             decoding="async"
             width="600"
             height="600"
+            sizes="(min-width: 1024px) 25vw, 50vw"
             className="h-full w-full object-cover"
           />
         </Link>

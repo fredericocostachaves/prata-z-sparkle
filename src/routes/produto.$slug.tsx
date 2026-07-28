@@ -161,6 +161,12 @@ function ProductPage() {
               <img
                 src={product.images[active]}
                 alt={product.name}
+                width="900"
+                height="900"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -173,7 +179,16 @@ function ProductPage() {
                     active === i ? "border-foreground" : "border-transparent"
                   }`}
                 >
-                  <img src={img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img
+                    src={img}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="200"
+                    height="200"
+                    sizes="120px"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -382,7 +397,17 @@ function ProductPage() {
         {/* Story block */}
         <section className="mt-20 grid lg:grid-cols-2 gap-12 items-center bg-secondary/40 rounded-sm p-8 md:p-14">
           <div className="aspect-[4/5] bg-gradient-to-br from-nude-soft to-secondary rounded-sm flex items-center justify-center overflow-hidden">
-            <img src={product.images[1] ?? product.images[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            <img
+              src={product.images[1] ?? product.images[0]}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              width="800"
+              height="1000"
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">A história por trás</p>
