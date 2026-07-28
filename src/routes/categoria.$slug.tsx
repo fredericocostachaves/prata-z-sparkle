@@ -107,6 +107,7 @@ function CardSkeleton() {
 
 function CategoryPage() {
   const { slug } = Route.useParams();
+  const initial = Route.useLoaderData();
   const cat = getCategory(slug);
   const [sort, setSort] = useState<Sort>("destaques");
   const fetchProducts = useServerFn(listCategoryProducts);
@@ -116,8 +117,10 @@ function CategoryPage() {
     queryFn: () => fetchProducts({ data: { slug: slug as CatalogCategorySlug } }),
     enabled: Boolean(cat),
     staleTime: 60_000,
+    initialData: initial,
     placeholderData: (prev) => prev,
   });
+
 
   const remote = data?.products ?? [];
   // Fallback: se a integração falhar (ou não houver retorno), mostramos o catálogo local
