@@ -161,6 +161,12 @@ function ProductPage() {
               <img
                 src={product.images[active]}
                 alt={product.name}
+                width="900"
+                height="900"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -173,7 +179,16 @@ function ProductPage() {
                     active === i ? "border-foreground" : "border-transparent"
                   }`}
                 >
-                  <img src={img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img
+                    src={img}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="200"
+                    height="200"
+                    sizes="120px"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
