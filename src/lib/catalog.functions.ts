@@ -2,30 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-
-export interface CatalogProduct {
-  id: string;
-  sku: string;
-  name: string;
-  price: number;
-  stock: number;
-  image: string | null;
-  gallery: string[];
-  description: string | null;
-  category: string;
-}
-
-const CATEGORY_SLUGS = [
-  "colares",
-  "brincos",
-  "aneis",
-  "pulseiras",
-  "pingentes",
-  "berloques",
-  "piercings",
-  "tornozeleiras",
-  "cuidados",
-] as const;
+import { CATEGORY_SLUGS, type CatalogProduct } from "./catalog.types";
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
@@ -54,11 +31,11 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       .order("nome");
 
     if (error) {
-      console.error("[Catálogo] Erro ao listar produtos:", error.message);
+      console.error("[Catalogo] Erro ao listar produtos:", error.message);
       return [];
     }
 
-    // Atualiza o estoque com o saldo em tempo real do Bling, quando disponível.
+    // Saldo em tempo real do Bling quando disponível
     const { getBlingStockBySku } = await import("./catalog.server");
     const blingStock = await getBlingStockBySku();
 
