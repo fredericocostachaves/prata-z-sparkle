@@ -14,12 +14,14 @@ interface Props {
 export function ProductCard({ product, index = 0 }: Props) {
   const fav = useFavorites();
   const cart = useCart();
+  const revealRef = useReveal<HTMLElement>();
   const isFav = fav.has(product.id);
   const tag = product.tag ?? (product.isNew ? "Novidade" : product.bestSeller ? "Best-seller" : null);
 
   return (
-    <article className="group reveal" style={{ transitionDelay: `${index * 60}ms` }}>
-      <div className="relative img-zoom aspect-square bg-secondary rounded-sm">
+    <article ref={revealRef} className="group reveal" style={{ transitionDelay: `${(index % 8) * 60}ms` }}>
+      <div className="relative img-zoom aspect-square bg-secondary rounded-sm overflow-hidden">
+
         <Link to="/produto/$slug" params={{ slug: product.slug }} className="block h-full w-full">
           <img
             src={product.images[0]}
