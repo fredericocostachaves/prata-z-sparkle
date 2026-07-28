@@ -313,6 +313,17 @@ class BlingClient {
     }
   }
 
+  /** Detalhe completo de um produto (descrição, mídias, variações, dimensões). */
+  async getProductById(id: number): Promise<Record<string, any> | null> {
+    try {
+      const data = await this.request<{ data: Record<string, any> }>(`/produtos/${id}`);
+      return data.data ?? null;
+    } catch (err) {
+      console.warn("[Bling] Erro ao buscar detalhe do produto:", err);
+      return null;
+    }
+  }
+
   async listProducts(page = 1, limit = 100): Promise<{ data: BlingProduct[]; total: number }> {
     const data = await this.request<{ data: BlingProduct[] }>(
       `/produtos?pagina=${page}&limite=${limit}&criterio=1`
