@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { categories, getCategory, type Product } from "@/data/products";
-import { listCategoryProducts, type CatalogProduct } from "@/lib/catalog.functions";
+import { listCategoryProducts } from "@/lib/catalog.functions";
+import type { CatalogProduct, CatalogCategorySlug } from "@/lib/catalog.types";
 import catFallback from "@/assets/cat-colar.jpg";
 
 export const Route = createFileRoute("/categoria/$slug")({
@@ -68,7 +69,7 @@ function CategoryPage() {
 
   const { data, isPending, isError } = useQuery({
     queryKey: ["catalogo", slug],
-    queryFn: () => fetchProducts({ data: { slug: slug as CatalogProduct["category"] } }),
+    queryFn: () => fetchProducts({ data: { slug: slug as CatalogCategorySlug } }),
     enabled: Boolean(cat),
     staleTime: 60_000,
     placeholderData: (prev) => prev,
