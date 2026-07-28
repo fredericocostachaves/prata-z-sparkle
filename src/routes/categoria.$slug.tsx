@@ -114,7 +114,7 @@ function CategoryPage() {
   }
 
   return (
-    <PageShell eyebrow="Catálogo" title={cat.name} subtitle={cat.description}>
+    <PageShell eyebrow="Catálogo" title={cat.name}>
       <section className="mx-auto max-w-7xl px-6 sm:px-10 py-12 md:py-16">
         {notice && !isPending && (
           <div className="mb-8 rounded-sm border border-nude/40 bg-nude/10 px-5 py-4 text-sm text-muted-foreground">
