@@ -245,6 +245,7 @@ export type Database = {
         Row: {
           altura_cm: number | null
           ativo: boolean
+          categoria: string | null
           comprimento_cm: number | null
           created_at: string
           descricao: string | null
@@ -265,6 +266,7 @@ export type Database = {
         Insert: {
           altura_cm?: number | null
           ativo?: boolean
+          categoria?: string | null
           comprimento_cm?: number | null
           created_at?: string
           descricao?: string | null
@@ -285,6 +287,7 @@ export type Database = {
         Update: {
           altura_cm?: number | null
           ativo?: boolean
+          categoria?: string | null
           comprimento_cm?: number | null
           created_at?: string
           descricao?: string | null
