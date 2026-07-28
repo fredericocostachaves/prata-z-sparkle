@@ -23,3 +23,17 @@ export interface CatalogProduct {
   description: string | null;
   category: string;
 }
+
+/** Motivo pelo qual o estoque em tempo real do Bling não pôde ser usado. */
+export type CatalogWarning =
+  | "bling_nao_configurado"
+  | "bling_indisponivel"
+  | "catalogo_indisponivel"
+  | null;
+
+export interface CatalogResult {
+  products: CatalogProduct[];
+  /** origem do saldo exibido */
+  source: "bling" | "banco" | "fallback";
+  warning: CatalogWarning;
+}
