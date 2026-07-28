@@ -135,6 +135,11 @@ function ProductPage() {
   return (
     <PageShell hideHero>
       <section className="mx-auto max-w-7xl px-6 sm:px-10 py-10 md:py-16">
+        {notice && (
+          <div className="mb-8 rounded-sm border border-nude/40 bg-nude/10 px-5 py-4 text-sm text-muted-foreground">
+            {notice}
+          </div>
+        )}
         <nav className="text-xs text-muted-foreground mb-8 flex gap-2">
           <Link to="/" className="hover:text-foreground">Início</Link>
           <span>/</span>
