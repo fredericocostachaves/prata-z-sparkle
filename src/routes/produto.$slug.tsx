@@ -7,7 +7,7 @@ import { formatInstallment, formatPrice, getProductBySlug, getProductsByCategory
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { getProductDetail } from "@/lib/catalog.functions";
-import type { CatalogDetailResult } from "@/lib/catalog.types";
+import type { CatalogDetailResult, CatalogProductDetail } from "@/lib/catalog.types";
 import { SITE_URL, productJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -153,7 +153,7 @@ function ProductPage() {
 
   });
 
-  const remote = data?.product ?? null;
+  const remote: CatalogProductDetail | null = (data?.product as CatalogProductDetail | null) ?? null;
 
   const product: Product | undefined = useMemo(() => {
     if (remote) {
