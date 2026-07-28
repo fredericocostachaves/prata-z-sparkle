@@ -449,7 +449,7 @@ function ProductPage() {
               </div>
             </div>
           </div>
-        </div>
+        </article>
 
         {/* Editorial content blocks (placeholder until Bling integration) */}
         <section className="mt-24 grid lg:grid-cols-3 gap-8 border-t border-border pt-16">
