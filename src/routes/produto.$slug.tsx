@@ -1,19 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Heart, ShoppingBag, Truck, ShieldCheck, Gift } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
-import { formatInstallment, formatPrice, getProductBySlug, getProductsByCategory } from "@/data/products";
+import { formatInstallment, formatPrice, getProductBySlug, getProductsByCategory, type Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import { getProductStock } from "@/lib/server-functions";
+import { getProductDetail } from "@/lib/catalog.functions";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import catFallback from "@/assets/cat-colar.jpg";
 
 export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => {
     const p = getProductBySlug(params.slug);
     const title = p ? `${p.name} — Prata Z Joias` : "Produto — Prata Z Joias";
-    const desc = p ? p.description : "Joia em prata 925.";
+    const desc = p ? p.description : "Joia em prata 925 com atendimento personalizado.";
     return {
       meta: [
         { title },
@@ -27,29 +29,85 @@ export const Route = createFileRoute("/produto/$slug")({
   component: ProductPage,
 });
 
+function DetailSkeleton() {
+  return (
+    <section className="mx-auto max-w-7xl px-6 sm:px-10 py-10 md:py-16">
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 animate-pulse">
+        <div className="aspect-square bg-secondary rounded-sm" />
+        <div className="space-y-5 pt-6">
+          <div className="h-3 w-24 bg-secondary rounded-sm" />
+          <div className="h-8 w-3/4 bg-secondary rounded-sm" />
+          <div className="h-6 w-1/3 bg-secondary rounded-sm" />
+          <div className="h-24 w-full bg-secondary rounded-sm" />
+          <div className="h-12 w-full bg-secondary rounded-sm" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ProductPage() {
   const { slug } = Route.useParams();
-  const product = getProductBySlug(slug);
+  const local = getProductBySlug(slug);
   const navigate = useNavigate();
   const cart = useCart();
   const fav = useFavorites();
   const [active, setActive] = useState(0);
-  const [size, setSize] = useState<string | undefined>(product?.sizes?.[0]);
   const [qty, setQty] = useState(1);
 
-  const { data: stock, isLoading: stockLoading } = useQuery({
-    queryKey: ['stock', product?.id],
-    queryFn: () => getProductStock({ data: product?.slug || '' }),
-    enabled: !!product,
-    staleTime: 5 * 60 * 1000,
+  const fetchDetail = useServerFn(getProductDetail);
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["produto", slug],
+    queryFn: () => fetchDetail({ data: { slug } }),
+    staleTime: 60_000,
     retry: 1,
   });
+
+  const remote = data?.product ?? null;
+
+  const product: Product | undefined = useMemo(() => {
+    if (remote) {
+      const images = remote.gallery.length ? remote.gallery : [catFallback];
+      return {
+        id: remote.id,
+        slug,
+        name: remote.name,
+        category: (remote.category || local?.category || "colares") as Product["category"],
+        price: remote.price,
+        images,
+        description: remote.description ?? "",
+        highlights: local?.highlights ?? [],
+        sizes: local?.sizes,
+        stock: remote.stock,
+      };
+    }
+    return local;
+  }, [remote, local, slug]);
+
+  const [size, setSize] = useState<string | undefined>(local?.sizes?.[0]);
+  const stock = remote?.stock ?? product?.stock;
+  const stockLoading = isPending && !local;
+
+  const notice =
+    isError || data?.warning === "catalogo_indisponivel"
+      ? "Não foi possível conectar ao catálogo agora. Exibindo as informações que temos em cache."
+      : data?.warning === "bling_nao_configurado"
+        ? "Integração com o Bling ainda não configurada — informações exibidas a partir do nosso banco de dados."
+        : data?.warning === "bling_indisponivel"
+          ? "Dados em tempo real do Bling temporariamente indisponíveis — exibindo as informações do nosso banco."
+          : null;
+
+  if (isPending && !local) return <PageShell hideHero><DetailSkeleton /></PageShell>;
 
   if (!product) {
     return (
       <PageShell eyebrow="Produto" title="Produto não encontrado">
         <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-          <Link to="/" className="story-link text-[12px] tracking-[0.3em] uppercase">
+          <p className="text-muted-foreground">
+            Não localizamos esta peça no catálogo. Ela pode ter sido vendida ou estar temporariamente
+            indisponível.
+          </p>
+          <Link to="/" className="mt-6 inline-block story-link text-[12px] tracking-[0.3em] uppercase">
             Voltar para a home
           </Link>
         </div>
@@ -73,9 +131,15 @@ function ProductPage() {
     `Olá! Gostaria de saber mais sobre: ${product.name} (${formatPrice(product.price)})`,
   );
 
+
   return (
     <PageShell hideHero>
       <section className="mx-auto max-w-7xl px-6 sm:px-10 py-10 md:py-16">
+        {notice && (
+          <div className="mb-8 rounded-sm border border-nude/40 bg-nude/10 px-5 py-4 text-sm text-muted-foreground">
+            {notice}
+          </div>
+        )}
         <nav className="text-xs text-muted-foreground mb-8 flex gap-2">
           <Link to="/" className="hover:text-foreground">Início</Link>
           <span>/</span>
@@ -212,6 +276,58 @@ function ProductPage() {
                 </li>
               ))}
             </ul>
+
+            {remote && remote.variations.length > 0 && (
+              <div className="mt-10">
+                <p className="text-[11px] tracking-[0.3em] uppercase text-foreground/70 mb-3">
+                  Variações disponíveis
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {remote.variations.map((v) => (
+                    <span
+                      key={v.id || v.sku}
+                      className="border border-border px-4 py-2 text-sm text-muted-foreground"
+                    >
+                      {v.name || v.sku}
+                      {v.stock > 0 ? ` · ${v.stock} un.` : " · esgotado"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {remote && (remote.attributes.length > 0 || remote.weightG || remote.dimensions) && (
+              <div className="mt-10 border-t border-border pt-8">
+                <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">
+                  Características
+                </p>
+                <dl className="mt-4 divide-y divide-border text-sm">
+                  {remote.attributes.map((a) => (
+                    <div key={a.label} className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">{a.label}</dt>
+                      <dd className="text-foreground text-right">{a.value}</dd>
+                    </div>
+                  ))}
+                  {remote.weightG ? (
+                    <div className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">Peso</dt>
+                      <dd className="text-foreground">{remote.weightG} g</dd>
+                    </div>
+                  ) : null}
+                  {remote.dimensions &&
+                  (remote.dimensions.height || remote.dimensions.width || remote.dimensions.length) ? (
+                    <div className="flex justify-between gap-6 py-2.5">
+                      <dt className="text-muted-foreground">Dimensões (A×L×C)</dt>
+                      <dd className="text-foreground">
+                        {[remote.dimensions.height, remote.dimensions.width, remote.dimensions.length]
+                          .map((n) => (n ? `${n}` : "—"))
+                          .join(" × ")} cm
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
+            )}
 
             <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8">
               <div className="text-center">

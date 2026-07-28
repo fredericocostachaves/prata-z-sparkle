@@ -37,3 +37,27 @@ export interface CatalogResult {
   source: "bling" | "banco" | "fallback";
   warning: CatalogWarning;
 }
+
+export interface CatalogProductDetail extends CatalogProduct {
+  /** Informações adicionais vindas do Bling quando disponíveis */
+  brand: string | null;
+  weightG: number | null;
+  dimensions: { height: number | null; width: number | null; length: number | null } | null;
+  attributes: { label: string; value: string }[];
+  variations: { id: string; name: string; sku: string; price: number; stock: number }[];
+}
+
+export interface CatalogDetailResult {
+  product: CatalogProductDetail | null;
+  source: "bling" | "banco" | "fallback";
+  warning: CatalogWarning | "produto_nao_encontrado";
+}
+
+export function slugifySku(v: string) {
+  return v
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
