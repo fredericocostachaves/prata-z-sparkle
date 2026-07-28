@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult } from "./catalog.types";
+import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, slugifySku } from "./catalog.types";
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
@@ -68,15 +68,6 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
     }
   });
 
-function slugify(v: string) {
-  return v
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 export const getProductDetail = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }): Promise<CatalogDetailResult> => {
@@ -107,7 +98,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
       }
 
       const row = (rows ?? []).find(
-        (r) => r.id === data.slug || slugify(r.sku ?? "") === data.slug,
+        (r) => r.id === data.slug || slugifySku(r.sku ?? "") === data.slug,
       );
 
       if (!row) {

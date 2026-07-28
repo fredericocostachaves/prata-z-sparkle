@@ -52,3 +52,12 @@ export interface CatalogDetailResult {
   source: "bling" | "banco" | "fallback";
   warning: CatalogWarning | "produto_nao_encontrado";
 }
+
+export function slugifySku(v: string) {
+  return v
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
