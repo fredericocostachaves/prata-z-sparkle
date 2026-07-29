@@ -3,19 +3,19 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
-import { bling } from "./integrations/bling.server";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
-  const TTL = 5 * 60 * 1000;
-  const cacheKey = "bling_stock_cache";
-  const cached = (globalThis as any)[cacheKey] as { at: number; map: Map<string, number> } | undefined;
-  if (cached && Date.now() - cached.at < TTL) return { map: cached.map, reason: null };
-
-  if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
-    return { map: null, reason: "bling_nao_configurado" };
-  }
-
   try {
+    const { bling } = await import("./integrations/bling.server");
+    const TTL = 5 * 60 * 1000;
+    const cacheKey = "bling_stock_cache";
+    const cached = (globalThis as any)[cacheKey] as { at: number; map: Map<string, number> } | undefined;
+    if (cached && Date.now() - cached.at < TTL) return { map: cached.map, reason: null };
+
+    if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
+      return { map: null, reason: "bling_nao_configurado" };
+    }
+
     await bling.loadFromDb();
     if (!bling.hasTokens) return { map: null, reason: "bling_nao_configurado" };
     if (bling.isExpired) await bling.refreshTokens();
@@ -61,10 +61,11 @@ function emptyDetail(reason: CatalogWarning): BlingDetailResult {
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
-  if (!sku) return emptyDetail("bling_indisponivel");
-  if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) return emptyDetail("bling_nao_configurado");
-
   try {
+    const { bling } = await import("./integrations/bling.server");
+    if (!sku) return emptyDetail("bling_indisponivel");
+    if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) return emptyDetail("bling_nao_configurado");
+
     await bling.loadFromDb();
     if (!bling.hasTokens) return emptyDetail("bling_nao_configurado");
     if (bling.isExpired) await bling.refreshTokens();
@@ -134,6 +135,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
     try {
       const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
       const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+      console.log("[Catalogo] Debug env:", { hasKey: !!key, hasUrl: !!url, keyPrefix: key?.slice(0, 10), url });
       if (!key || !url) {
         console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
         return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
@@ -152,7 +154,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         },
       });
 
-      console.log(`[Catalogo] Consultando categoria "${data.slug}"...`);
+      console.log(`[Catalogo] Consultando categoria "${data.slug}"...`, { key: key?.slice(0, 10), url });
       const { data: rows, error } = await supabase
         .from("produtos")
         .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
