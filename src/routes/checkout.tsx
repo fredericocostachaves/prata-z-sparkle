@@ -93,18 +93,25 @@ function CheckoutPage() {
 
       // Calcular frete automaticamente
       const totalWeight = cart.items.reduce((acc, it) => acc + (0.05 * it.qty), 0); // Mock weight 50g per item
-      const options = await calculateShipping({
-        data: {
-          cepDestino: digits,
-          pesoKg: Math.max(0.1, totalWeight),
-          alturaCm: 10,
-          larguraCm: 15,
-          comprimentoCm: 20
-        }
-      });
+      let options: SuperFreteOption[] = [];
+      try {
+        options = await calculateShipping({
+          data: {
+            cepDestino: digits,
+            pesoKg: Math.max(0.1, totalWeight),
+            alturaCm: 10,
+            larguraCm: 15,
+            comprimentoCm: 20
+          }
+        });
+      } catch (shippingErr) {
+        console.error('Erro ao calcular frete:', shippingErr);
+        toast.error("Não foi possível calcular o frete");
+      }
       setShippingOptions(options);
       if (options.length > 0) setSelectedShipping(options[0]);
-    } catch {
+    } catch (cepErr) {
+      console.error('Erro ao consultar CEP:', cepErr);
       toast.error("Não foi possível consultar o CEP");
     } finally {
       setCepLoading(false);

@@ -19,7 +19,10 @@ export const getProductStock = createServerFn({ method: "GET" })
 export const calculateShipping = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => d as SuperFreteQuoteParams)
   .handler(async ({ data: params }) => {
-    return await superFrete.calculateShipping(params);
+    console.log('[calculateShipping] params:', JSON.stringify(params));
+    const result = await superFrete.calculateShipping(params);
+    console.log('[calculateShipping] result:', JSON.stringify(result));
+    return result;
   });
 
 // --- NUBANK FUNCTIONS ---
