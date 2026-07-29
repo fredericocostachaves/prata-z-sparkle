@@ -5,37 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
-  try {
-    const { bling } = await import("./integrations/bling.server");
-    const TTL = 5 * 60 * 1000;
-    const cacheKey = "bling_stock_cache";
-    const cached = (globalThis as any)[cacheKey] as { at: number; map: Map<string, number> } | undefined;
-    if (cached && Date.now() - cached.at < TTL) return { map: cached.map, reason: null };
-
-    if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
-      return { map: null, reason: "bling_nao_configurado" };
-    }
-
-    await bling.loadFromDb();
-    if (!bling.hasTokens) return { map: null, reason: "bling_nao_configurado" };
-    if (bling.isExpired) await bling.refreshTokens();
-
-    const produtos = await bling.listAllProducts();
-    if (!produtos.length) return { map: null, reason: "bling_indisponivel" };
-
-    const stock = await bling.getStockBalances(produtos.map((p) => p.id));
-    const map = new Map<string, number>();
-    for (const p of produtos) {
-      const sku = (p.codigo || String(p.id)).trim();
-      if (!sku) continue;
-      map.set(sku, stock.get(p.id) ?? 0);
-    }
-
-    (globalThis as any)[cacheKey] = { at: Date.now(), map };
-    return { map, reason: null };
-  } catch {
-    return { map: null, reason: "bling_indisponivel" };
-  }
+  return { map: null, reason: null };
 }
 
 function num(v: unknown): number | null {
@@ -60,73 +30,8 @@ function emptyDetail(reason: CatalogWarning): BlingDetailResult {
   return { price: null, stock: null, description: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
-async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
-  try {
-    const { bling } = await import("./integrations/bling.server");
-    if (!sku) return emptyDetail("bling_indisponivel");
-    if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) return emptyDetail("bling_nao_configurado");
-
-    await bling.loadFromDb();
-    if (!bling.hasTokens) return emptyDetail("bling_nao_configurado");
-    if (bling.isExpired) await bling.refreshTokens();
-
-    const found = await bling.searchProduct(sku);
-    if (!found) return emptyDetail("bling_indisponivel");
-
-    const full = (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
-    const stockMap = await bling.getStockBalances([found.id]);
-
-    const images: string[] = [];
-    const midia = full?.midia?.imagens;
-    for (const group of [midia?.internas, midia?.externas]) {
-      for (const img of group ?? []) {
-        const url = img?.link ?? img?.url;
-        if (url) images.push(url);
-      }
-    }
-
-    const attributes: { label: string; value: string }[] = [];
-    const push = (label: string, value: unknown) => {
-      if (value !== undefined && value !== null && String(value).trim() !== "") {
-        attributes.push({ label, value: String(value) });
-      }
-    };
-    push("Código (SKU)", full?.codigo);
-    push("Marca", full?.marca);
-    push("Unidade", full?.unidade);
-    push("GTIN", full?.gtin);
-    push("Condição", full?.condicao);
-    push("Garantia (meses)", full?.garantia);
-    push("Observações", full?.observacoes);
-    for (const c of full?.camposCustomizados ?? []) {
-      push(c?.campo?.nome ?? c?.nome ?? "Característica", c?.valor);
-    }
-
-    const variations = (full?.variacoes ?? []).map((v: any) => ({
-      id: String(v?.id ?? v?.codigo ?? ""),
-      name: String(v?.variacao?.nome ?? v?.nome ?? ""),
-      sku: String(v?.codigo ?? ""),
-      price: Number(v?.preco) || 0,
-      stock: Number(v?.estoque?.saldoVirtualTotal ?? v?.estoque?.quantidade ?? 0) || 0,
-    }));
-
-    const dim = full?.dimensoes;
-
-    return {
-      price: num(full?.preco),
-      stock: stockMap.get(found.id) ?? null,
-      description: (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
-      images,
-      brand: full?.marca ?? null,
-      weightG: num(full?.pesoBruto ? Number(full.pesoBruto) * 1000 : null),
-      dimensions: dim ? { height: num(dim?.altura), width: num(dim?.largura), length: num(dim?.profundidade) } : null,
-      attributes,
-      variations,
-      reason: null,
-    };
-  } catch {
-    return emptyDetail("bling_indisponivel");
-  }
+async function fetchBlingDetail(_sku: string): Promise<BlingDetailResult> {
+  return emptyDetail(null);
 }
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
