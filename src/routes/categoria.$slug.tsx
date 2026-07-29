@@ -130,17 +130,6 @@ function CategoryPage() {
   const useFallback =
     isError || data?.source === "fallback" || (!isPending && remote.length === 0);
 
-  const notice =
-    isError || data?.source === "fallback"
-      ? "Não foi possível conectar ao catálogo agora. Exibindo peças de exemplo enquanto normalizamos a integração."
-      : data?.warning === "bling_nao_configurado"
-        ? "Integração com o Bling ainda não configurada — os saldos exibidos são os do nosso banco de dados."
-        : data?.warning === "bling_indisponivel"
-          ? "Estoque em tempo real do Bling temporariamente indisponível — exibindo os saldos do nosso banco de dados."
-          : !isPending && remote.length === 0 && list.length > 0
-            ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
-            : null;
-
   const fallbackProducts = useMemo(() => getProductsByCategory(slug), [slug]);
 
   const list = useMemo(() => {
@@ -153,6 +142,17 @@ function CategoryPage() {
     if (sort === "novos") sorted.sort((a, b) => a.name.localeCompare(b.name));
     return sorted;
   }, [remote, sort, useFallback, fallbackProducts]);
+
+  const notice =
+    isError || data?.source === "fallback"
+      ? "Não foi possível conectar ao catálogo agora. Exibindo peças de exemplo enquanto normalizamos a integração."
+      : data?.warning === "bling_nao_configurado"
+        ? "Integração com o Bling ainda não configurada — os saldos exibidos são os do nosso banco de dados."
+        : data?.warning === "bling_indisponivel"
+          ? "Estoque em tempo real do Bling temporariamente indisponível — exibindo os saldos do nosso banco de dados."
+          : !isPending && remote.length === 0 && fallbackProducts.length > 0
+            ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
+            : null;
 
   if (!cat) {
     return (

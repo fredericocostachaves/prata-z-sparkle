@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, slugifySku } from "./catalog.types";
+import { getBlingStockBySku, getBlingProductDetail } from "./catalog.server";
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
@@ -51,7 +52,6 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       }
 
       // Saldo em tempo real do Bling quando as credenciais estiverem configuradas
-      const { getBlingStockBySku } = await import("./catalog.server");
       const bling = await getBlingStockBySku();
 
       const products: CatalogProduct[] = (rows ?? [])
@@ -124,7 +124,6 @@ export const getProductDetail = createServerFn({ method: "GET" })
         return { product: null, source: "banco", warning: "produto_nao_encontrado" };
       }
 
-      const { getBlingProductDetail } = await import("./catalog.server");
       const live = await getBlingProductDetail((row.sku ?? "").trim());
 
       const gallery = [
