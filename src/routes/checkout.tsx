@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
-import { calculateShipping, createPaymentSession, finalizeOrder } from "@/lib/server-functions";
+import { createPaymentSession, finalizeOrder } from "@/lib/server-functions";
 import type { SuperFreteOption } from "@/lib/integrations/superfrete.server";
 
 export const Route = createFileRoute("/checkout")({
@@ -93,17 +93,29 @@ function CheckoutPage() {
 
       // Calcular frete automaticamente
       const totalWeight = cart.items.reduce((acc, it) => acc + (0.05 * it.qty), 0); // Mock weight 50g per item
-      const options = await calculateShipping({
-        data: {
-          cepDestino: digits,
-          pesoKg: Math.max(0.1, totalWeight),
-          alturaCm: 10,
-          larguraCm: 15,
-          comprimentoCm: 20
+      try {
+        const res = await fetch('/api/superfrete/calcular', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cepDestino: digits,
+            pesoKg: Math.max(0.1, totalWeight),
+            alturaCm: 10,
+            larguraCm: 15,
+            comprimentoCm: 20
+          })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Erro ao calcular frete');
         }
-      });
-      setShippingOptions(options);
-      if (options.length > 0) setSelectedShipping(options[0]);
+        const data = await res.json();
+        const options = Array.isArray(data) ? data.filter((opt: any) => !opt.error) : [];
+        setShippingOptions(options);
+        if (options.length > 0) setSelectedShipping(options[0]);
+      } catch (e) {
+        console.error('Erro ao calcular frete:', e);
+      }
     } catch (e) {
       console.error('Erro no handleCepChange:', e);
       toast.error("Não foi possível consultar o CEP");
