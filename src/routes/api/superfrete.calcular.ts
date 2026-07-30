@@ -6,7 +6,8 @@ export const Route = createFileRoute('/api/superfrete/calcular')({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          const token = process.env.SUPERFRETE_TOKEN;
+          const token = process.env.SUPERFRETE_TOKEN || process.env.SECRET_SUPERFRETE_TOKEN || '';
+          console.log('[SuperFrete] token setado:', !!token, '| env keys:', Object.keys(process.env).filter(k => k.toLowerCase().includes('superfrete')).join(','));
           const storeCep = (process.env.STORE_CEP || '08020-000').replace(/\D/g, '');
           const isProduction = process.env.NODE_ENV === 'production';
           const baseUrl = isProduction
