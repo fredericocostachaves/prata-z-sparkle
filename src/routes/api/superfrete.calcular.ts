@@ -6,21 +6,13 @@ export const Route = createFileRoute('/api/superfrete/calcular')({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          // Tentar ler de várias fontes de env
           const token = process.env.SUPERFRETE_TOKEN
             || process.env.SECRET_SUPERFRETE_TOKEN
             || process.env.VITE_SUPERFRETE_TOKEN
             || '';
-          console.log('[SuperFrete] token setado:', !!token, '| comprimento:', token.length);
-          console.log('[SuperFrete] STORE_CEP:', process.env.STORE_CEP);
-          console.log('[SuperFrete] NODE_ENV:', process.env.NODE_ENV);
           const storeCep = (process.env.STORE_CEP || '08020-000').replace(/\D/g, '');
-          const isProduction = process.env.NODE_ENV === 'production';
-          /*const baseUrl = isProduction
-            ? 'https://api.superfrete.com'
-            : 'https://sandbox.superfrete.com';*/
 
-          const baseUrl = "https://sandbox.superfrete.com";
+          const baseUrl = process.env.SUPERFRETE_BASE_URL || 'https://sandbox.superfrete.com';
 
           if (!token) {
             return Response.json({ error: 'SUPERFRETE_TOKEN não configurado' }, { status: 500 });
