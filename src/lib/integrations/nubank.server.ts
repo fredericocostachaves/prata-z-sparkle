@@ -1,5 +1,4 @@
 export interface NubankCheckoutParams {
-  /** Valor do pedido em reais (BRL), ex.: 150.5 para R$ 150,50 */
   amount: number;
   reference: string;
   shopper: {
@@ -20,12 +19,6 @@ export interface NubankCheckoutResponse {
   expiresAt: string;
   approvalCode?: string;
   selectedPaymentOption?: string;
-  shopper?: {
-    identification?: {
-      type?: string;
-      value?: string;
-    };
-  };
 }
 
 export interface NubankPaymentParams {
@@ -37,14 +30,13 @@ export interface NubankPaymentParams {
     currency: string;
   };
   shopper: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
     taxId: string;
     phone?: string;
   };
   items: Array<{
-    id?: string;
     name: string;
     quantity: number;
     unitAmount: number;
@@ -62,8 +54,8 @@ class NubankClient {
   private siteUrl: string;
 
   constructor() {
-    this.apiKey = process.env.NUPAY_MERCHANT_KEY || '';
-    this.apiToken = process.env.NUPAY_MERCHANT_TOKEN || '';
+    this.apiKey = process.env.NUPAY_API_KEY || '';
+    this.apiToken = process.env.NUPAY_API_TOKEN || '';
     const isProduction = process.env.NODE_ENV === 'production';
     this.baseUrl = isProduction
       ? 'https://api.spinpay.com.br'
@@ -80,15 +72,13 @@ class NubankClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.apiKey || !this.apiToken) {
-      throw new Error(
-        'NUPAY_MERCHANT_KEY e NUPAY_MERCHANT_TOKEN não configurados. Adicione em .env'
-      );
+      throw new Error('NUPAY_API_KEY e NUPAY_API_TOKEN não configurados. Adicione em .env');
     }
 
     const url = `${this.baseUrl}${endpoint}`;
     const headers = this.getHeaders();
-    headers.set('X-Merchant-Key', this.apiKey);
-    headers.set('X-Merchant-Token', this.apiToken);
+    headers.set('x-api-key', this.apiKey);
+    headers.set('x-api-token', this.apiToken);
 
     const response = await fetch(url, { ...options, headers });
 
@@ -106,16 +96,21 @@ class NubankClient {
       currency: 'BRL',
       reference: params.reference,
       amount: params.amount,
-      returnUrl: `${this.siteUrl}/checkout/retorno`,
+      returnUrl: `${this.siteUrl}/checkout/retorno?session={sessionId}&reference={reference}`,
       callbackUrl: `${this.siteUrl}/api/webhook/nupay`,
       merchant: {
-        displayName: 'Prata Z Joias',
+        name: 'Prata Z Joias',
+        logoUrl: `${this.siteUrl}/logo.png`,
       },
       shopper: {
+        firstName: params.shopper.firstName,
+        lastName: params.shopper.lastName,
+        email: params.shopper.email,
         identification: {
           type: 'CPF',
-          value: params.shopper.taxId,
+          number: params.shopper.taxId,
         },
+        phone: params.shopper.phone,
       },
       expiresInMinutes: 30,
     };
@@ -140,36 +135,25 @@ class NubankClient {
     const body = {
       merchantOrderReference: params.merchantOrderReference,
       referenceId: params.referenceId,
-      approvalCode: params.approvalCode,
       amount: {
         value: params.amount.value,
         currency: params.amount.currency || 'BRL',
       },
-      paymentMethod: {
-        type: 'nupay',
-        authorizationType: 'manually_authorized',
-      },
       shopper: {
-        ...(params.shopper.firstName ? { firstName: params.shopper.firstName } : {}),
-        ...(params.shopper.lastName ? { lastName: params.shopper.lastName } : {}),
-        ...(params.shopper.email ? { email: params.shopper.email } : {}),
-        document: params.shopper.taxId,
-        documentType: 'CPF',
-        ...(params.shopper.phone
-          ? { phone: { country: '55', number: params.shopper.phone } }
-          : {}),
+        firstName: params.shopper.firstName,
+        lastName: params.shopper.lastName,
+        email: params.shopper.email,
+        identification: {
+          type: 'CPF',
+          number: params.shopper.taxId,
+        },
+        phone: params.shopper.phone,
       },
-      items: params.items.map((it) => ({
-        id: String(it.id ?? it.name),
-        description: it.name,
-        value: it.unitAmount,
-        quantity: it.quantity,
-      })),
+      items: params.items,
       paymentFlow: params.paymentFlow || {
         returnUrl: `${this.siteUrl}/conta/pedidos`,
         cancelUrl: `${this.siteUrl}/checkout`,
       },
-      callbackUrl: `${this.siteUrl}/api/webhook/nupay`,
     };
 
     return this.request('/v1/checkouts/payments', {

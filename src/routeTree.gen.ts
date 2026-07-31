@@ -39,7 +39,6 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiWebhookNupayRouteImport } from './routes/api/webhook/nupay'
-import { Route as ApiSuperfreteCalcularRouteImport } from './routes/api/superfrete.calcular'
 import { Route as ApiBlingCallbackRouteImport } from './routes/api/bling/callback'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
@@ -199,11 +198,6 @@ const ApiWebhookNupayRoute = ApiWebhookNupayRouteImport.update({
   path: '/api/webhook/nupay',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSuperfreteCalcularRoute = ApiSuperfreteCalcularRouteImport.update({
-  id: '/api/superfrete/calcular',
-  path: '/api/superfrete/calcular',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiBlingCallbackRoute = ApiBlingCallbackRouteImport.update({
   id: '/api/bling/callback',
   path: '/api/bling/callback',
@@ -292,7 +286,6 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/api/bling/callback': typeof ApiBlingCallbackRoute
-  '/api/superfrete/calcular': typeof ApiSuperfreteCalcularRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
@@ -332,7 +325,6 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/api/bling/callback': typeof ApiBlingCallbackRoute
-  '/api/superfrete/calcular': typeof ApiSuperfreteCalcularRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
@@ -375,7 +367,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/api/bling/callback': typeof ApiBlingCallbackRoute
-  '/api/superfrete/calcular': typeof ApiSuperfreteCalcularRoute
   '/api/webhook/nupay': typeof ApiWebhookNupayRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/bling/callback': typeof AuthenticatedAdminBlingCallbackRoute
@@ -418,7 +409,6 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/bling/callback'
-    | '/api/superfrete/calcular'
     | '/api/webhook/nupay'
     | '/admin/'
     | '/admin/bling/callback'
@@ -458,7 +448,6 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/bling/callback'
-    | '/api/superfrete/calcular'
     | '/api/webhook/nupay'
     | '/admin'
     | '/admin/bling/callback'
@@ -500,7 +489,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/produtos'
     | '/api/bling/callback'
-    | '/api/superfrete/calcular'
     | '/api/webhook/nupay'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/bling/callback'
@@ -532,7 +520,6 @@ export interface RootRouteChildren {
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiBlingCallbackRoute: typeof ApiBlingCallbackRoute
-  ApiSuperfreteCalcularRoute: typeof ApiSuperfreteCalcularRoute
   ApiWebhookNupayRoute: typeof ApiWebhookNupayRoute
 }
 
@@ -748,13 +735,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhookNupayRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/superfrete/calcular': {
-      id: '/api/superfrete/calcular'
-      path: '/api/superfrete/calcular'
-      fullPath: '/api/superfrete/calcular'
-      preLoaderRoute: typeof ApiSuperfreteCalcularRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/bling/callback': {
       id: '/api/bling/callback'
       path: '/api/bling/callback'
@@ -943,7 +923,6 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriaSlugRoute: CategoriaSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiBlingCallbackRoute: ApiBlingCallbackRoute,
-  ApiSuperfreteCalcularRoute: ApiSuperfreteCalcularRoute,
   ApiWebhookNupayRoute: ApiWebhookNupayRoute,
 }
 export const routeTree = rootRouteImport

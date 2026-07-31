@@ -23,7 +23,7 @@ function SobrePage() {
         </p>
         <p>
           Trabalhamos exclusivamente com prata esterlina 925 — selecionada peça a peça,
-          com selo de autenticidade e 3 meses de garantia nas peças*.
+          com selo de autenticidade e garantia vitalícia de troca de fechos e ajustes.
           Cada coleção é pensada para combinar com o seu estilo de vida: do dia a dia
           aos momentos mais especiais.
         </p>
@@ -37,15 +37,8 @@ function SobrePage() {
           <li><strong>Autenticidade:</strong> 100% prata 925 com selo de garantia.</li>
           <li><strong>Cuidado:</strong> embalagens exclusivas e atendimento individual.</li>
           <li><strong>Estilo:</strong> coleções atemporais e peças statement.</li>
-          <li><strong>Confiança:</strong> 3 meses de garantia* e suporte pós-venda.</li>
+          <li><strong>Confiança:</strong> garantia vitalícia e suporte pós-venda.</li>
         </ul>
-
-        <p className="pt-8 text-xs text-muted-foreground border-t border-border mt-8">
-          *A garantia das peças é de 3 meses, contados a partir da data de recebimento,
-          e cobre exclusivamente defeitos de fabricação. A garantia não se estende a
-          danos causados por mau uso, quedas, contato com produtos químicos, umidade
-          excessiva, desgaste natural ou intervenções realizadas por terceiros.
-        </p>
       </section>
     </PageShell>
   );

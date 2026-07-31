@@ -47,11 +47,7 @@ class SuperFreteClient {
   private userAgent: string;
 
   constructor() {
-    const envToken = process.env.SUPERFRETE_TOKEN || '';
-    if (!envToken) {
-      console.warn('[SuperFrete] SUPERFRETE_TOKEN not in process.env, will try fallback');
-    }
-    this.token = envToken;
+    this.token = process.env.SUPERFRETE_TOKEN || '';
     const isProduction = process.env.NODE_ENV === 'production';
     this.baseUrl = isProduction
       ? 'https://api.superfrete.com'

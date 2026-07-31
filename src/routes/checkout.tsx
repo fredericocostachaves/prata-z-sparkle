@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
-import { createPaymentSession, finalizeOrder } from "@/lib/server-functions";
+import { calculateShipping, createPaymentSession, finalizeOrder } from "@/lib/server-functions";
 import type { SuperFreteOption } from "@/lib/integrations/superfrete.server";
 
 export const Route = createFileRoute("/checkout")({
@@ -93,31 +93,25 @@ function CheckoutPage() {
 
       // Calcular frete automaticamente
       const totalWeight = cart.items.reduce((acc, it) => acc + (0.05 * it.qty), 0); // Mock weight 50g per item
+      let options: SuperFreteOption[] = [];
       try {
-        const res = await fetch('/api/superfrete/calcular', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        options = await calculateShipping({
+          data: {
             cepDestino: digits,
             pesoKg: Math.max(0.1, totalWeight),
             alturaCm: 10,
             larguraCm: 15,
             comprimentoCm: 20
-          })
+          }
         });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Erro ao calcular frete');
-        }
-        const data = await res.json();
-        const options = Array.isArray(data) ? data.filter((opt: any) => !opt.error) : [];
-        setShippingOptions(options);
-        if (options.length > 0) setSelectedShipping(options[0]);
-      } catch (e) {
-        console.error('Erro ao calcular frete:', e);
+      } catch (shippingErr) {
+        console.error('Erro ao calcular frete:', shippingErr);
+        toast.error("Não foi possível calcular o frete");
       }
-    } catch (e) {
-      console.error('Erro no handleCepChange:', e);
+      setShippingOptions(options);
+      if (options.length > 0) setSelectedShipping(options[0]);
+    } catch (cepErr) {
+      console.error('Erro ao consultar CEP:', cepErr);
       toast.error("Não foi possível consultar o CEP");
     } finally {
       setCepLoading(false);
@@ -225,7 +219,7 @@ function CheckoutPage() {
       // 2. Criar sessão de pagamento no Nubank
       const payment = await createPaymentSession({
         data: {
-          amount: Number(totalFinal.toFixed(2)),
+          amount: Math.round(totalFinal * 100),
           reference: order.numero.toString(),
           shopper: {
             firstName: data.name.split(' ')[0],
