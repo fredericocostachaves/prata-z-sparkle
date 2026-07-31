@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { PageShell } from '@/components/PageShell';
+import { getPaymentSession } from '@/lib/server-functions';
 
 export const Route = createFileRoute('/checkout/retorno')({
   component: CheckoutRetornoPage,
@@ -12,22 +13,29 @@ function CheckoutRetornoPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const state = params.get('state');
+    const sessionId = params.get('sessionId');
 
     if (state === 'canceled') {
       setStatus('canceled');
       return;
     }
 
-    const session = params.get('session');
-    const reference = params.get('reference');
-
-    if (!session && !reference) {
+    if (!sessionId) {
       setStatus('error');
       return;
     }
 
-    const timer = setTimeout(() => {
-      setStatus('success');
+    const timer = setTimeout(async () => {
+      try {
+        const session = await getPaymentSession({ data: sessionId });
+        if (session.status === 'approved' || session.status === 'completed') {
+          setStatus('success');
+        } else {
+          setStatus('canceled');
+        }
+      } catch {
+        setStatus('success');
+      }
     }, 2000);
 
     return () => clearTimeout(timer);

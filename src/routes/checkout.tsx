@@ -225,7 +225,7 @@ function CheckoutPage() {
       // 2. Criar sessão de pagamento no Nubank
       const payment = await createPaymentSession({
         data: {
-          amount: Math.round(totalFinal * 100),
+          amount: Number(totalFinal.toFixed(2)),
           reference: order.numero.toString(),
           shopper: {
             firstName: data.name.split(' ')[0],
