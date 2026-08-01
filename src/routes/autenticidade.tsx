@@ -6,9 +6,9 @@ export const Route = createFileRoute("/autenticidade")({
   head: () => ({
     meta: [
       { title: "Garantia de autenticidade — Prata 925 Prata Z" },
-      { name: "description", content: "Todas as peças Prata Z são em prata esterlina 925 com selo de autenticidade e garantia vitalícia." },
+      { name: "description", content: "Todas as peças Prata Z são em prata esterlina 925 com selo de autenticidade e 30 dias de garantia." },
       { property: "og:title", content: "Garantia 925 — Prata Z Joias" },
-      { property: "og:description", content: "Selo de autenticidade, prata esterlina 925 e garantia vitalícia." },
+      { property: "og:description", content: "Selo de autenticidade, prata esterlina 925 e 30 dias de garantia." },
     ],
   }),
   component: AutenticidadePage,
@@ -18,7 +18,7 @@ const items = [
   { icon: Award, title: "Selo 925", desc: "Cada peça leva o selo oficial 925 que comprova a pureza da prata esterlina." },
   { icon: ShieldCheck, title: "Certificado", desc: "Acompanha certificado de origem e laudo de autenticidade." },
   { icon: Sparkles, title: "Acabamento premium", desc: "Polimento manual e revisão peça a peça antes do envio." },
-  { icon: RotateCcw, title: "Garantia vitalícia", desc: "Troca de fechos e ajustes sem custo enquanto a peça existir." },
+  { icon: RotateCcw, title: "30 dias de garantia*", desc: "As peças contam com 30 dias de garantia*." },
 ];
 
 function AutenticidadePage() {
@@ -43,6 +43,11 @@ function AutenticidadePage() {
             <li>Limpe com flanela específica para prata sempre que necessário.</li>
             <li>Em manchas mais difíceis, conte com nosso serviço de polimento profissional.</li>
           </ul>
+
+          <p className="pt-6 text-xs text-muted-foreground leading-relaxed border-t border-border mt-8">
+            *A garantia das peças é de 30 dias por defeitos de fabricação, mediante avaliação
+            técnica, não se estendendo a danos causados por mau uso.
+          </p>
         </div>
       </section>
     </PageShell>
