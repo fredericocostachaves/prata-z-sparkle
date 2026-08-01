@@ -6,9 +6,9 @@ export const Route = createFileRoute("/autenticidade")({
   head: () => ({
     meta: [
       { title: "Garantia de autenticidade — Prata 925 Prata Z" },
-      { name: "description", content: "Todas as peças Prata Z são em prata esterlina 925 com selo de autenticidade e garantia vitalícia." },
+      { name: "description", content: "Todas as peças Prata Z são em prata esterlina 925 com selo de autenticidade e 30 dias de garantia." },
       { property: "og:title", content: "Garantia 925 — Prata Z Joias" },
-      { property: "og:description", content: "Selo de autenticidade, prata esterlina 925 e garantia vitalícia." },
+      { property: "og:description", content: "Selo de autenticidade, prata esterlina 925 e 30 dias de garantia." },
     ],
   }),
   component: AutenticidadePage,
