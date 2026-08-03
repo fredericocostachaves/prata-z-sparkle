@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
-import { Link, getRouteApi } from "@tanstack/react-router";
+import { useMemo, useRef } from "react";
+import { getRouteApi } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
-import { getCategory, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
+
 import type { BestSellersResult, CatalogProduct } from "@/lib/catalog.types";
 import catFallback from "@/assets/cat-colar.jpg";
 
@@ -27,11 +28,24 @@ function toProduct(p: CatalogProduct): Product {
 export function MostLoved() {
   const data = routeApi.useLoaderData() as BestSellersResult;
   const groups = data?.groups ?? [];
-  const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  const current = groups[active];
-  const items = useMemo(() => (current?.products ?? []).map(toProduct), [current]);
+  const items = useMemo(() => {
+    const all: Product[] = [];
+    const seen = new Set<string>();
+    // intercala produtos das categorias para variedade visual
+    const max = Math.max(0, ...groups.map((g) => g.products.length));
+    for (let i = 0; i < max; i++) {
+      for (const g of groups) {
+        const p = g.products[i];
+        if (p && !seen.has(p.id)) {
+          seen.add(p.id);
+          all.push(toProduct(p));
+        }
+      }
+    }
+    return all;
+  }, [groups]);
 
   const scrollBy = (dir: 1 | -1) => {
     const el = trackRef.current;
@@ -39,46 +53,18 @@ export function MostLoved() {
     el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" });
   };
 
-  if (!groups.length) return null;
+  if (!items.length) return null;
 
   return (
     <section id="mais-amados" className="py-12 md:py-16 bg-background">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8 md:mb-10 gap-6">
-          <div className="max-w-2xl">
-            <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Top de vendas</p>
-            <h2 className="mt-4 text-4xl md:text-5xl text-foreground">
-              Os mais amados <em className="text-nude-deep not-italic font-serif italic">pelas prateadas</em>
-            </h2>
-          </div>
-          {current && (
-            <Link
-              to="/categoria/$slug"
-              params={{ slug: current.slug }}
-              className="story-link text-[12px] tracking-[0.3em] uppercase text-foreground self-start md:self-end"
-            >
-              Ver coleção completa
-            </Link>
-          )}
+        <div className="mb-8 md:mb-10 max-w-2xl">
+          <p className="text-[11px] tracking-[0.4em] uppercase text-nude-deep">Top de vendas</p>
+          <h2 className="mt-4 text-4xl md:text-5xl text-foreground">
+            Os mais amados <em className="text-nude-deep not-italic font-serif italic">pelas prateadas</em>
+          </h2>
         </div>
 
-        {/* Abas de categorias */}
-        <div className="flex flex-wrap gap-x-6 gap-y-3 border-b border-border pb-4 mb-8">
-          {groups.map((g, i) => (
-            <button
-              key={g.slug}
-              onClick={() => {
-                setActive(i);
-                trackRef.current?.scrollTo({ left: 0 });
-              }}
-              className={`text-[12px] tracking-[0.22em] uppercase transition-colors ${
-                i === active ? "text-nude-deep" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {getCategory(g.slug)?.name ?? g.slug}
-            </button>
-          ))}
-        </div>
 
         <div className="relative">
           <div
