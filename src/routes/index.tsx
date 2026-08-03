@@ -14,6 +14,13 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import hero1 from "@/assets/hero-1.jpg";
 
 export const Route = createFileRoute("/")({
+  loader: async (): Promise<BestSellersResult> => {
+    try {
+      return await listBestSellersByCategory();
+    } catch {
+      return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Prata Z Joias — Alta joalheria em prata 925" },
