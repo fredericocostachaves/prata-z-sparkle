@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
-import { Link, getRouteApi } from "@tanstack/react-router";
+import { useMemo, useRef } from "react";
+import { getRouteApi } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
-import { getCategory, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
+
 import type { BestSellersResult, CatalogProduct } from "@/lib/catalog.types";
 import catFallback from "@/assets/cat-colar.jpg";
 
