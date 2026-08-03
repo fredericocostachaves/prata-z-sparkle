@@ -61,3 +61,14 @@ export function slugifySku(v: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+export interface BestSellerGroup {
+  slug: CatalogCategorySlug;
+  products: CatalogProduct[];
+}
+
+export interface BestSellersResult {
+  groups: BestSellerGroup[];
+  source: "bling" | "banco" | "fallback";
+  warning: CatalogWarning;
+}

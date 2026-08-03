@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
+import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
   return { map: null, reason: null };
@@ -196,3 +196,77 @@ export const getProductDetail = createServerFn({ method: "GET" })
       return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
     }
   });
+
+/**
+ * Peças em destaque ("Top de vendas") agrupadas por categoria.
+ * Só entram itens ativos com estoque acima de 1 unidade (mínimo 2).
+ */
+export const listBestSellersByCategory = createServerFn({ method: "GET" }).handler(
+  async (): Promise<BestSellersResult> => {
+    try {
+      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+      if (!key || !url) return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
+
+      const supabase = createClient<Database>(url, key, {
+        auth: { persistSession: false },
+        global: {
+          fetch: (input, init) => {
+            const h = new Headers(init?.headers);
+            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
+              h.delete("Authorization");
+            }
+            h.set("apikey", key);
+            return fetch(input, { ...init, headers: h });
+          },
+        },
+      });
+
+      const { data: rows, error } = await supabase
+        .from("produtos")
+        .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+        .eq("ativo", true)
+        .gt("estoque_atual", 1)
+        .order("estoque_atual", { ascending: false });
+
+      if (error) {
+        console.error("[Catalogo] Erro em listBestSellersByCategory:", error.message);
+        return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
+      }
+
+      const bling = await fetchBlingStock();
+
+      const byCategory = new Map<string, CatalogProduct[]>();
+      for (const r of rows ?? []) {
+        const slug = (r.categoria ?? "").trim();
+        if (!(CATEGORY_SLUGS as readonly string[]).includes(slug)) continue;
+        const live = bling.map?.get((r.sku ?? "").trim());
+        const stock = live ?? r.estoque_atual ?? 0;
+        if (stock <= 1) continue;
+        const list = byCategory.get(slug) ?? [];
+        list.push({
+          id: r.id,
+          sku: r.sku,
+          name: r.nome,
+          price: Number(r.preco_venda) || 0,
+          stock,
+          image: r.imagem_url,
+          gallery: r.galeria_urls ?? [],
+          description: r.descricao,
+          category: slug,
+        });
+        byCategory.set(slug, list);
+      }
+
+      const groups = CATEGORY_SLUGS.filter((s) => (byCategory.get(s)?.length ?? 0) > 0).map((s) => ({
+        slug: s,
+        products: (byCategory.get(s) ?? []).slice(0, 12),
+      }));
+
+      return { groups, source: bling.map ? "bling" : "banco", warning: bling.reason };
+    } catch (err) {
+      console.error("[Catalogo] Falha inesperada em listBestSellersByCategory:", err);
+      return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
+    }
+  },
+);
