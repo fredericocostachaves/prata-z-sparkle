@@ -12,6 +12,8 @@ import { Footer } from "@/components/Footer";
 import { FloatingButtons } from "@/components/FloatingButtons";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import hero1 from "@/assets/hero-1.jpg";
+import { listBestSellersByCategory } from "@/lib/catalog.functions";
+import type { BestSellersResult } from "@/lib/catalog.types";
 
 export const Route = createFileRoute("/")({
   loader: async (): Promise<BestSellersResult> => {
