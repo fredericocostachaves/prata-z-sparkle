@@ -41,6 +41,7 @@ export interface CatalogResult {
 export interface CatalogProductDetail extends CatalogProduct {
   /** Informações adicionais vindas do Bling quando disponíveis */
   descriptionLong: string | null;
+  descriptionShort: string | null;
   brand: string | null;
   weightG: number | null;
   dimensions: { height: number | null; width: number | null; length: number | null } | null;

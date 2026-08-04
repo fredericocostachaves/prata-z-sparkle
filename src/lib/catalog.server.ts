@@ -61,6 +61,7 @@ export interface BlingDetail {
   stock: number | null;
   description: string | null;
   descriptionLong: string | null;
+  descriptionShort: string | null;
 
 
   images: string[];
@@ -79,6 +80,8 @@ const EMPTY: BlingDetail = {
   stock: null,
   description: null,
   descriptionLong: null,
+  descriptionShort: null,
+
 
   images: [],
   brand: null,
@@ -161,6 +164,8 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
         (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
       descriptionLong:
         (full?.descricaoComplementar || full?.descricao || full?.descricaoCurta || null) ?? null,
+      descriptionShort:
+        (full?.descricaoCurta || full?.descricao || null) ?? null,
       images,
 
       brand: full?.marca ?? null,

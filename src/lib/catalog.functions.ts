@@ -28,6 +28,7 @@ interface BlingDetailResult {
   stock: number | null;
   description: string | null;
   descriptionLong: string | null;
+  descriptionShort: string | null;
   images: string[];
   brand: string | null;
   weightG: number | null;
@@ -38,7 +39,7 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, descriptionShort: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
@@ -198,6 +199,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
         gallery,
         description: live.description ?? row.descricao ?? null,
         descriptionLong: live.descriptionLong ?? live.description ?? row.descricao ?? null,
+        descriptionShort: live.descriptionShort ?? row.descricao ?? null,
         category: row.categoria ?? "",
 
         brand: live.brand,

@@ -178,9 +178,9 @@ function ProductPage() {
   const stock = remote?.stock ?? product?.stock;
   const stockLoading = isPending && !local;
 
-  /** Texto rico do Bling (descrição complementar) para "Detalhes que fazem a diferença" */
-  const blingDetalhes = useMemo(() => {
-    const raw = remote?.descriptionLong ?? remote?.description ?? null;
+  /** Descrição curta do Bling para a dobra "Descrição do produto" */
+  const blingDescricaoCurta = useMemo(() => {
+    const raw = remote?.descriptionShort ?? remote?.description ?? null;
     if (!raw) return null;
     const text = raw
       .replace(/<br\s*\/?>/gi, "\n")
@@ -481,38 +481,29 @@ function ProductPage() {
         </article>
 
         {/* Conteúdo editorial — alimentado pelos dados do Bling quando disponíveis */}
-        <section className="mt-24 grid lg:grid-cols-3 gap-8 border-t border-border pt-16">
+        <section className="mt-24 grid lg:grid-cols-2 gap-8 border-t border-border pt-16">
           <div>
-            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Sobre a peça</p>
-            <h2 className="mt-3 text-2xl font-serif text-foreground">Detalhes que fazem a diferença</h2>
-            {blingDetalhes ? (
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Descrição do produto</p>
+            {blingDescricaoCurta ? (
               <p className="mt-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                {blingDetalhes}
+                {blingDescricaoCurta}
               </p>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                Cada {product.name.toLowerCase()} é produzida em prata esterlina 925, com selo de
-                autenticidade gravado e acabamento à mão por nossas joalheiras parceiras. Uma peça
-                pensada para acompanhar você do dia a dia aos momentos mais especiais.
-              </p>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                {blingMateriais.length ? (
+                  blingMateriais.map((m) => <li key={m}>• {m}</li>)
+                ) : (
+                  <>
+                    <li>• Liga: prata 925 (92,5% prata pura)</li>
+                    <li>• Acabamento: polido espelhado</li>
+                    <li>• Banho protetor antiescurecimento</li>
+                    <li>• Hipoalergênico e nickel-free</li>
+                  </>
+                )}
+              </ul>
             )}
           </div>
-          <div>
-            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Composição</p>
-            <h2 className="mt-3 text-2xl font-serif text-foreground">Materiais & acabamento</h2>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              {blingMateriais.length ? (
-                blingMateriais.map((m) => <li key={m}>• {m}</li>)
-              ) : (
-                <>
-                  <li>• Liga: prata 925 (92,5% prata pura)</li>
-                  <li>• Acabamento: polido espelhado</li>
-                  <li>• Banho protetor antiescurecimento</li>
-                  <li>• Hipoalergênico e nickel-free</li>
-                </>
-              )}
-            </ul>
-          </div>
+
 
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Como cuidar</p>
