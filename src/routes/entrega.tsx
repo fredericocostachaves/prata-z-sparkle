@@ -18,7 +18,7 @@ function EntregaPage() {
       <section className="mx-auto max-w-4xl px-6 sm:px-10 py-12 md:py-16">
         <div className="grid sm:grid-cols-3 gap-6">
           {[
-            { icon: Truck, t: "Frete grátis", d: "Acima de R$ 299 para todo o Brasil." },
+            { icon: Truck, t: "Envio nacional", d: "Enviamos para todo o Brasil com rastreio." },
             { icon: Clock, t: "Prazo", d: "1 a 7 dias úteis após postagem." },
             { icon: Package, t: "Embalagem premium", d: "Caixa rígida, pronta para presentear." },
           ].map((it) => (
