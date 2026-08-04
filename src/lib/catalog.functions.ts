@@ -195,7 +195,9 @@ export const getProductDetail = createServerFn({ method: "GET" })
         image: gallery[0] ?? null,
         gallery,
         description: live.description ?? row.descricao ?? null,
+        descriptionLong: live.descriptionLong ?? live.description ?? row.descricao ?? null,
         category: row.categoria ?? "",
+
         brand: live.brand,
         weightG: live.weightG ?? (row.peso_g ? Number(row.peso_g) : null),
         dimensions: dims,
