@@ -199,6 +199,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
         gallery,
         description: live.description ?? row.descricao ?? null,
         descriptionLong: live.descriptionLong ?? live.description ?? row.descricao ?? null,
+        descriptionShort: live.descriptionShort ?? row.descricao ?? null,
         category: row.categoria ?? "",
 
         brand: live.brand,
