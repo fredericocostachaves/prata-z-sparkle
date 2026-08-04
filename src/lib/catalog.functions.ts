@@ -107,7 +107,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
           return {
             id: r.id,
             sku: r.sku,
-            name: r.nome,
+            name: formatProductTitle(r.sku, r.nome),
             price: Number(r.preco_venda) || 0,
             stock: live ?? r.estoque_atual ?? 0,
             image: r.imagem_url,
@@ -189,7 +189,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
       const product: CatalogProductDetail = {
         id: row.id,
         sku: row.sku,
-        name: row.nome,
+        name: formatProductTitle(live.code ?? row.sku, live.name ?? row.nome),
         price: live.price ?? Number(row.preco_venda) ?? 0,
         stock: live.stock ?? row.estoque_atual ?? 0,
         image: gallery[0] ?? null,
@@ -266,7 +266,7 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
         list.push({
           id: r.id,
           sku: r.sku,
-          name: r.nome,
+          name: formatProductTitle(r.sku, r.nome),
           price: Number(r.preco_venda) || 0,
           stock,
           image: r.imagem_url,
