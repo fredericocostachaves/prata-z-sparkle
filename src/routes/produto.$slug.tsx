@@ -178,6 +178,43 @@ function ProductPage() {
   const stock = remote?.stock ?? product?.stock;
   const stockLoading = isPending && !local;
 
+  /** Texto rico do Bling (descrição complementar) para "Detalhes que fazem a diferença" */
+  const blingDetalhes = useMemo(() => {
+    const raw = remote?.descriptionLong ?? remote?.description ?? null;
+    if (!raw) return null;
+    const text = raw
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return text || null;
+  }, [remote]);
+
+  /** Características do Bling para "Materiais & acabamento" */
+  const blingMateriais = useMemo<string[]>(() => {
+    if (!remote) return [];
+    const items: string[] = [];
+    const skip = new Set(["Código (SKU)", "GTIN", "Unidade", "Observações"]);
+    for (const a of remote.attributes ?? []) {
+      if (!skip.has(a.label)) items.push(`${a.label}: ${a.value}`);
+    }
+    if (remote.brand && !items.some((i) => i.startsWith("Marca"))) {
+      items.unshift(`Marca: ${remote.brand}`);
+    }
+    if (remote.weightG) items.push(`Peso: ${remote.weightG} g`);
+    const d = remote.dimensions;
+    if (d && (d.height || d.width || d.length)) {
+      items.push(
+        `Dimensões (A×L×C): ${[d.height, d.width, d.length].map((n) => n ?? "—").join(" × ")} cm`,
+      );
+    }
+    return items;
+  }, [remote]);
+
+
   const notice =
     isError || data?.warning === "catalogo_indisponivel"
       ? "Não foi possível conectar ao catálogo agora. Exibindo as informações que temos em cache."
