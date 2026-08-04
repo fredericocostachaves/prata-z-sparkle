@@ -73,6 +73,8 @@ const EMPTY: BlingDetail = {
   price: null,
   stock: null,
   description: null,
+  descriptionLong: null,
+
   images: [],
   brand: null,
   weightG: null,
