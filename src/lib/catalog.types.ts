@@ -40,12 +40,14 @@ export interface CatalogResult {
 
 export interface CatalogProductDetail extends CatalogProduct {
   /** Informações adicionais vindas do Bling quando disponíveis */
+  descriptionLong: string | null;
   brand: string | null;
   weightG: number | null;
   dimensions: { height: number | null; width: number | null; length: number | null } | null;
   attributes: { label: string; value: string }[];
   variations: { id: string; name: string; sku: string; price: number; stock: number }[];
 }
+
 
 export interface CatalogDetailResult {
   product: CatalogProductDetail | null;

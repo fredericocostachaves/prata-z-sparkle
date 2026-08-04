@@ -5,8 +5,16 @@ import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
-  return { map: null, reason: null };
+  try {
+    const { getBlingStockBySku } = await import("./catalog.server");
+    const res = await getBlingStockBySku();
+    return { map: res.map, reason: res.reason };
+  } catch (err) {
+    console.warn("[Catalogo] Estoque Bling indisponível:", err);
+    return { map: null, reason: "bling_indisponivel" };
+  }
 }
+
 
 function num(v: unknown): number | null {
   const n = Number(v);
@@ -17,6 +25,7 @@ interface BlingDetailResult {
   price: number | null;
   stock: number | null;
   description: string | null;
+  descriptionLong: string | null;
   images: string[];
   brand: string | null;
   weightG: number | null;
@@ -27,12 +36,20 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { price: null, stock: null, description: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
-async function fetchBlingDetail(_sku: string): Promise<BlingDetailResult> {
-  return emptyDetail(null);
+async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
+  if (!sku) return emptyDetail("bling_indisponivel");
+  try {
+    const { getBlingProductDetail } = await import("./catalog.server");
+    return await getBlingProductDetail(sku);
+  } catch (err) {
+    console.warn("[Catalogo] Detalhe Bling indisponível:", err);
+    return emptyDetail("bling_indisponivel");
+  }
 }
+
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
@@ -178,7 +195,9 @@ export const getProductDetail = createServerFn({ method: "GET" })
         image: gallery[0] ?? null,
         gallery,
         description: live.description ?? row.descricao ?? null,
+        descriptionLong: live.descriptionLong ?? live.description ?? row.descricao ?? null,
         category: row.categoria ?? "",
+
         brand: live.brand,
         weightG: live.weightG ?? (row.peso_g ? Number(row.peso_g) : null),
         dimensions: dims,

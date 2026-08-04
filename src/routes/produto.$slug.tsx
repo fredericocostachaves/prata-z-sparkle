@@ -178,6 +178,43 @@ function ProductPage() {
   const stock = remote?.stock ?? product?.stock;
   const stockLoading = isPending && !local;
 
+  /** Texto rico do Bling (descrição complementar) para "Detalhes que fazem a diferença" */
+  const blingDetalhes = useMemo(() => {
+    const raw = remote?.descriptionLong ?? remote?.description ?? null;
+    if (!raw) return null;
+    const text = raw
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return text || null;
+  }, [remote]);
+
+  /** Características do Bling para "Materiais & acabamento" */
+  const blingMateriais = useMemo<string[]>(() => {
+    if (!remote) return [];
+    const items: string[] = [];
+    const skip = new Set(["Código (SKU)", "GTIN", "Unidade", "Observações"]);
+    for (const a of remote.attributes ?? []) {
+      if (!skip.has(a.label)) items.push(`${a.label}: ${a.value}`);
+    }
+    if (remote.brand && !items.some((i) => i.startsWith("Marca"))) {
+      items.unshift(`Marca: ${remote.brand}`);
+    }
+    if (remote.weightG) items.push(`Peso: ${remote.weightG} g`);
+    const d = remote.dimensions;
+    if (d && (d.height || d.width || d.length)) {
+      items.push(
+        `Dimensões (A×L×C): ${[d.height, d.width, d.length].map((n) => n ?? "—").join(" × ")} cm`,
+      );
+    }
+    return items;
+  }, [remote]);
+
+
   const notice =
     isError || data?.warning === "catalogo_indisponivel"
       ? "Não foi possível conectar ao catálogo agora. Exibindo as informações que temos em cache."
@@ -443,27 +480,40 @@ function ProductPage() {
           </div>
         </article>
 
-        {/* Editorial content blocks (placeholder until Bling integration) */}
+        {/* Conteúdo editorial — alimentado pelos dados do Bling quando disponíveis */}
         <section className="mt-24 grid lg:grid-cols-3 gap-8 border-t border-border pt-16">
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Sobre a peça</p>
             <h2 className="mt-3 text-2xl font-serif text-foreground">Detalhes que fazem a diferença</h2>
-            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              Cada {product.name.toLowerCase()} é produzida em prata esterlina 925, com selo de
-              autenticidade gravado e acabamento à mão por nossas joalheiras parceiras. Uma peça
-              pensada para acompanhar você do dia a dia aos momentos mais especiais.
-            </p>
+            {blingDetalhes ? (
+              <p className="mt-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                {blingDetalhes}
+              </p>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                Cada {product.name.toLowerCase()} é produzida em prata esterlina 925, com selo de
+                autenticidade gravado e acabamento à mão por nossas joalheiras parceiras. Uma peça
+                pensada para acompanhar você do dia a dia aos momentos mais especiais.
+              </p>
+            )}
           </div>
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Composição</p>
             <h2 className="mt-3 text-2xl font-serif text-foreground">Materiais & acabamento</h2>
             <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <li>• Liga: prata 925 (92,5% prata pura)</li>
-              <li>• Acabamento: polido espelhado</li>
-              <li>• Banho protetor antiescurecimento</li>
-              <li>• Hipoalergênico e nickel-free</li>
+              {blingMateriais.length ? (
+                blingMateriais.map((m) => <li key={m}>• {m}</li>)
+              ) : (
+                <>
+                  <li>• Liga: prata 925 (92,5% prata pura)</li>
+                  <li>• Acabamento: polido espelhado</li>
+                  <li>• Banho protetor antiescurecimento</li>
+                  <li>• Hipoalergênico e nickel-free</li>
+                </>
+              )}
             </ul>
           </div>
+
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Como cuidar</p>
             <h2 className="mt-3 text-2xl font-serif text-foreground">Para durar por gerações</h2>
