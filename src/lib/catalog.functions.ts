@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku } from "./catalog.types";
+import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku, formatProductTitle } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
   try {
@@ -22,6 +22,8 @@ function num(v: unknown): number | null {
 }
 
 interface BlingDetailResult {
+  name: string | null;
+  code: string | null;
   price: number | null;
   stock: number | null;
   description: string | null;
@@ -36,7 +38,7 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
@@ -107,7 +109,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
           return {
             id: r.id,
             sku: r.sku,
-            name: r.nome,
+            name: formatProductTitle(r.sku, r.nome),
             price: Number(r.preco_venda) || 0,
             stock: live ?? r.estoque_atual ?? 0,
             image: r.imagem_url,
@@ -189,7 +191,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
       const product: CatalogProductDetail = {
         id: row.id,
         sku: row.sku,
-        name: row.nome,
+        name: formatProductTitle(live.code ?? row.sku, live.name ?? row.nome),
         price: live.price ?? Number(row.preco_venda) ?? 0,
         stock: live.stock ?? row.estoque_atual ?? 0,
         image: gallery[0] ?? null,
@@ -266,7 +268,7 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
         list.push({
           id: r.id,
           sku: r.sku,
-          name: r.nome,
+          name: formatProductTitle(r.sku, r.nome),
           price: Number(r.preco_venda) || 0,
           stock,
           image: r.imagem_url,
