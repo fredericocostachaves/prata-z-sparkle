@@ -39,7 +39,7 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, descriptionShort: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
