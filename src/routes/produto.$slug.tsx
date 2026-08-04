@@ -217,9 +217,8 @@ function ProductPage() {
     navigate({ to: "/checkout" });
   };
 
-  const whatsappMsg = encodeURIComponent(
-    `Olá! Gostaria de saber mais sobre: ${product.name} (${formatPrice(product.price)})`,
-  );
+
+
 
 
   return (
