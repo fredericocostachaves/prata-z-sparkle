@@ -148,7 +148,10 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
       stock: stockMap.get(found.id) ?? null,
       description:
         (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
+      descriptionLong:
+        (full?.descricaoComplementar || full?.descricao || full?.descricaoCurta || null) ?? null,
       images,
+
       brand: full?.marca ?? null,
       weightG: num(full?.pesoBruto ? Number(full.pesoBruto) * 1000 : null),
       dimensions: dim
