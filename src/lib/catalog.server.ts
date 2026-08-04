@@ -55,10 +55,13 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
 }
 
 export interface BlingDetail {
+  name: string | null;
+  code: string | null;
   price: number | null;
   stock: number | null;
   description: string | null;
   descriptionLong: string | null;
+
 
   images: string[];
   brand: string | null;
