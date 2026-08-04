@@ -217,9 +217,8 @@ function ProductPage() {
     navigate({ to: "/checkout" });
   };
 
-  const whatsappMsg = encodeURIComponent(
-    `Olá! Gostaria de saber mais sobre: ${product.name} (${formatPrice(product.price)})`,
-  );
+
+
 
 
   return (
@@ -364,15 +363,8 @@ function ProductPage() {
                 <Heart className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
                 {isFav ? "Favoritado" : "Favoritar"}
               </button>
-              <a
-                href={`https://wa.me/5500000000000?text=${whatsappMsg}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 border border-border hover:border-foreground py-3 text-[11px] tracking-[0.2em] uppercase transition"
-              >
-                Comprar pelo WhatsApp
-              </a>
             </div>
+
 
             <ul className="mt-10 space-y-3">
               {product.highlights.map((h) => (
