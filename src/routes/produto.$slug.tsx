@@ -567,7 +567,7 @@ function ProductPage() {
         {/* Service highlights */}
         <section className="mt-20 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { title: "Envio para todo o Brasil", desc: "Frete grátis acima de R$ 299, entregas seguras com rastreio." },
+            { title: "Envio para todo o Brasil", desc: "Entregas seguras com rastreio para todo o país." },
             { title: "Parcele em até 4x", desc: "Sem juros no cartão de crédito ou 5% off no Pix." },
             { title: "Garantia vitalícia", desc: "Troca de fechos e pequenos ajustes para sempre." },
             { title: "Embalagem premium", desc: "Caixa rígida assinada e cartão para presentear." },
