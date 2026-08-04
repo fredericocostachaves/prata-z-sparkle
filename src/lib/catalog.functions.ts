@@ -5,8 +5,16 @@ import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
-  return { map: null, reason: null };
+  try {
+    const { getBlingStockBySku } = await import("./catalog.server");
+    const res = await getBlingStockBySku();
+    return { map: res.map, reason: res.reason };
+  } catch (err) {
+    console.warn("[Catalogo] Estoque Bling indisponível:", err);
+    return { map: null, reason: "bling_indisponivel" };
+  }
 }
+
 
 function num(v: unknown): number | null {
   const n = Number(v);
