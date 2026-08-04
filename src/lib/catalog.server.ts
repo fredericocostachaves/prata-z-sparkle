@@ -164,6 +164,8 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
         (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
       descriptionLong:
         (full?.descricaoComplementar || full?.descricao || full?.descricaoCurta || null) ?? null,
+      descriptionShort:
+        (full?.descricaoCurta || full?.descricao || null) ?? null,
       images,
 
       brand: full?.marca ?? null,
