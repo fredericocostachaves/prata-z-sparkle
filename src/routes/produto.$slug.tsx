@@ -178,9 +178,9 @@ function ProductPage() {
   const stock = remote?.stock ?? product?.stock;
   const stockLoading = isPending && !local;
 
-  /** Texto rico do Bling (descrição complementar) para "Detalhes que fazem a diferença" */
-  const blingDetalhes = useMemo(() => {
-    const raw = remote?.descriptionLong ?? remote?.description ?? null;
+  /** Descrição curta do Bling para a dobra "Descrição do produto" */
+  const blingDescricaoCurta = useMemo(() => {
+    const raw = remote?.descriptionShort ?? remote?.description ?? null;
     if (!raw) return null;
     const text = raw
       .replace(/<br\s*\/?>/gi, "\n")
