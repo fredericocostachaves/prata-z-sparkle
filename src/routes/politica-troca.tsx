@@ -19,7 +19,8 @@ export const Route = createFileRoute("/politica-troca")({
           <li>Após análise, faremos a troca ou estorno em até 7 dias úteis.</li>
         </ol>
         <h2 className="text-2xl font-serif pt-4">Garantia</h2>
-        <p>Todas as peças têm garantia de 90 dias contra defeitos de fabricação e garantia vitalícia para troca de fechos e ajustes.</p>
+        <p>Todas as peças têm 30 dias de garantia* contra defeitos de fabricação, contados a partir da data de recebimento.</p>
+        <p className="text-sm text-muted-foreground">*A garantia não cobre mau uso, desgaste natural, contato com produtos químicos, quedas ou alterações feitas por terceiros.</p>
       </section>
     </PageShell>
   ),

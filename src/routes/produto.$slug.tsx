@@ -552,8 +552,8 @@ function ProductPage() {
               cuidadosa para entregar significado, conforto e elegância atemporal.
             </p>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              Nosso compromisso é com a autenticidade — por isso oferecemos garantia vitalícia
-              de troca de fechos e ajustes, além de atendimento individual quando você desejar.
+              Nosso compromisso é com a autenticidade — por isso oferecemos 30 dias de garantia*
+              nas peças, além de atendimento individual quando você desejar.
             </p>
             <Link
               to="/sobre"
@@ -569,7 +569,7 @@ function ProductPage() {
           {[
             { title: "Envio para todo o Brasil", desc: "Entregas seguras com rastreio para todo o país." },
             { title: "Parcele em até 4x", desc: "Sem juros no cartão de crédito ou 5% off no Pix." },
-            { title: "Garantia vitalícia", desc: "Troca de fechos e pequenos ajustes para sempre." },
+            { title: "Garantia de 30 dias*", desc: "Cobertura contra defeitos de fabricação." },
             { title: "Embalagem premium", desc: "Caixa rígida assinada e cartão para presentear." },
           ].map((item) => (
             <div key={item.title} className="border border-border p-6 rounded-sm">
