@@ -73,6 +73,8 @@ export interface BlingDetail {
 }
 
 const EMPTY: BlingDetail = {
+  name: null,
+  code: null,
   price: null,
   stock: null,
   description: null,
@@ -151,6 +153,8 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
     const dim = full?.dimensoes;
 
     return {
+      name: (full?.nome ?? found?.nome ?? null) || null,
+      code: (full?.codigo ?? sku ?? null) || null,
       price: num(full?.preco),
       stock: stockMap.get(found.id) ?? null,
       description:
