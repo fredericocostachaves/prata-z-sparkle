@@ -74,3 +74,16 @@ export interface BestSellersResult {
   source: "bling" | "banco" | "fallback";
   warning: CatalogWarning;
 }
+
+/**
+ * Título de exibição: código (SKU) do Bling seguido do nome do produto.
+ * Evita duplicar o código quando o nome do Bling já começa com ele.
+ */
+export function formatProductTitle(sku: string | null | undefined, name: string | null | undefined) {
+  const code = (sku ?? "").trim();
+  const title = (name ?? "").trim();
+  if (!code) return title;
+  if (!title) return code;
+  if (title.toLowerCase().startsWith(code.toLowerCase())) return title;
+  return `${code} ${title}`;
+}
