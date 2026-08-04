@@ -25,6 +25,7 @@ interface BlingDetailResult {
   price: number | null;
   stock: number | null;
   description: string | null;
+  descriptionLong: string | null;
   images: string[];
   brand: string | null;
   weightG: number | null;
@@ -35,12 +36,20 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { price: null, stock: null, description: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
-async function fetchBlingDetail(_sku: string): Promise<BlingDetailResult> {
-  return emptyDetail(null);
+async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
+  if (!sku) return emptyDetail("bling_indisponivel");
+  try {
+    const { getBlingProductDetail } = await import("./catalog.server");
+    return await getBlingProductDetail(sku);
+  } catch (err) {
+    console.warn("[Catalogo] Detalhe Bling indisponível:", err);
+    return emptyDetail("bling_indisponivel");
+  }
 }
+
 
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
