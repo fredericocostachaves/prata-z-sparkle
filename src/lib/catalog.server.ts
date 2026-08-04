@@ -61,6 +61,7 @@ export interface BlingDetail {
   stock: number | null;
   description: string | null;
   descriptionLong: string | null;
+  descriptionShort: string | null;
 
 
   images: string[];
