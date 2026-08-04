@@ -22,6 +22,8 @@ function num(v: unknown): number | null {
 }
 
 interface BlingDetailResult {
+  name: string | null;
+  code: string | null;
   price: number | null;
   stock: number | null;
   description: string | null;
@@ -36,7 +38,7 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
