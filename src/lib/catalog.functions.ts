@@ -1,10 +1,45 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, categorySearchKeywords, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku, formatProductTitle } from "./catalog.types";
+import {
+  CATEGORY_SLUGS,
+  categorySearchKeywords,
+  type CatalogProduct,
+  type CatalogResult,
+  type CatalogProductDetail,
+  type CatalogDetailResult,
+  type CatalogWarning,
+  type BestSellersResult,
+  slugifySku,
+  formatProductTitle,
+} from "./catalog.types";
 
-async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
+/**
+ * Cliente do catálogo. Usa service_role (somente no servidor) para ler a
+ * tabela produtos: a role anon/publishable key não tem mais SELECT na tabela,
+ * apenas na view pública restrita vw_catalogo_produtos. Retorna null quando as
+ * variáveis de ambiente do Supabase não estão configuradas.
+ */
+async function getCatalogDb() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log("[Catalogo] Debug env:", {
+    hasKey: !!key,
+    hasUrl: !!url,
+    keyPrefix: key?.slice(0, 10),
+    url,
+  });
+  if (!key || !url) {
+    console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
+    return null;
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+async function fetchBlingStock(): Promise<{
+  map: Map<string, number> | null;
+  reason: CatalogWarning;
+}> {
   try {
     const { getBlingStockBySku } = await import("./catalog.server");
     const res = await getBlingStockBySku();
@@ -14,7 +49,6 @@ async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; rea
     return { map: null, reason: "bling_indisponivel" };
   }
 }
-
 
 function num(v: unknown): number | null {
   const n = Number(v);
@@ -39,7 +73,22 @@ interface BlingDetailResult {
 }
 
 function emptyDetail(reason: CatalogWarning): BlingDetailResult {
-  return { name: null, code: null, price: null, stock: null, description: null, descriptionLong: null, descriptionShort: null, images: [], brand: null, weightG: null, dimensions: null, attributes: [], variations: [], reason };
+  return {
+    name: null,
+    code: null,
+    price: null,
+    stock: null,
+    description: null,
+    descriptionLong: null,
+    descriptionShort: null,
+    images: [],
+    brand: null,
+    weightG: null,
+    dimensions: null,
+    attributes: [],
+    variations: [],
+    reason,
+  };
 }
 
 async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
@@ -53,43 +102,30 @@ async function fetchBlingDetail(sku: string): Promise<BlingDetailResult> {
   }
 }
 
-
 export const listCategoryProducts = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.enum(CATEGORY_SLUGS) }).parse(d))
   .handler(async ({ data }): Promise<CatalogResult> => {
     try {
-      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
-      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
-      console.log("[Catalogo] Debug env:", { hasKey: !!key, hasUrl: !!url, keyPrefix: key?.slice(0, 10), url });
-      if (!key || !url) {
-        console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
-        return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
-      }
-      const supabase = createClient<Database>(url, key, {
-        auth: { persistSession: false },
-        global: {
-          fetch: (input, init) => {
-            const h = new Headers(init?.headers);
-            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-              h.delete("Authorization");
-            }
-            h.set("apikey", key);
-            return fetch(input, { ...init, headers: h });
-          },
-        },
-      });
+      const supabase = await getCatalogDb();
+      if (!supabase) return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
 
-      console.log(`[Catalogo] Consultando categoria "${data.slug}"...`, { key: key?.slice(0, 10), url });
-      let { data: rows, error } = await supabase
+      console.log(`[Catalogo] Consultando categoria "${data.slug}"...`);
+      const { data: firstRows, error } = await supabase
         .from("produtos")
-        .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+        .select(
+          "id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria",
+        )
         .eq("categoria", data.slug)
         .eq("ativo", true)
         .gte("estoque_atual", 1)
         .order("nome");
+      let rows = firstRows;
 
       if (error) {
-        console.error(`[Catalogo] Erro ao listar produtos (categoria: ${data.slug}):`, error.message);
+        console.error(
+          `[Catalogo] Erro ao listar produtos (categoria: ${data.slug}):`,
+          error.message,
+        );
         return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
       }
 
@@ -103,16 +139,23 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
           const orFilter = keywords.map((kw) => `nome.ilike.%${kw}%`).join(",");
           const res = await supabase
             .from("produtos")
-            .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+            .select(
+              "id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria",
+            )
             .eq("ativo", true)
             .gte("estoque_atual", 1)
             .or(orFilter)
             .order("nome");
           if (res.error) {
-            console.error(`[Catalogo] Erro na busca por palavra-chave (${data.slug}):`, res.error.message);
+            console.error(
+              `[Catalogo] Erro na busca por palavra-chave (${data.slug}):`,
+              res.error.message,
+            );
           } else {
             rows = res.data;
-            console.log(`[Catalogo] Categoria "${data.slug}" vazia; palavra-chave encontrou ${res.data?.length ?? 0} produto(s)`);
+            console.log(
+              `[Catalogo] Categoria "${data.slug}" vazia; palavra-chave encontrou ${res.data?.length ?? 0} produto(s)`,
+            );
           }
         }
       }
@@ -121,7 +164,9 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
 
       // Se não houver produtos no banco, usar fallback
       if (!rows || rows.length === 0) {
-        console.log(`[Catalogo] Nenhum produto encontrado para "${data.slug}" no banco, retornando fallback`);
+        console.log(
+          `[Catalogo] Nenhum produto encontrado para "${data.slug}" no banco, retornando fallback`,
+        );
         return { products: [], source: "fallback", warning: null };
       }
 
@@ -146,11 +191,15 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       // outra conta etc.), não esvaziamos a vitrine: usamos o saldo do banco.
       let warning = bling.reason;
       if (products.length === 0 && (rows ?? []).length > 0 && bling.map) {
-        const dbOnly = (rows ?? []).map((r) => ({ ...mapProduct(r), stock: r.estoque_atual ?? 0 })).filter((p) => p.stock >= 1);
+        const dbOnly = (rows ?? [])
+          .map((r) => ({ ...mapProduct(r), stock: r.estoque_atual ?? 0 }))
+          .filter((p) => p.stock >= 1);
         if (dbOnly.length > 0) {
           products = dbOnly;
           warning = "bling_indisponivel";
-          console.warn(`[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças)`);
+          console.warn(
+            `[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças)`,
+          );
         }
       }
 
@@ -160,7 +209,11 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         warning,
       };
     } catch (err) {
-      console.error("[Catalogo] Falha inesperada em listCategoryProducts:", err instanceof Error ? err.message : err, err instanceof Error ? err.stack : "");
+      console.error(
+        "[Catalogo] Falha inesperada em listCategoryProducts:",
+        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.stack : "",
+      );
       return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
     }
   });
@@ -169,29 +222,14 @@ export const getProductDetail = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data }): Promise<CatalogDetailResult> => {
     try {
-      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
-      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
-      if (!key || !url) {
-        console.error("[Catalogo] Variáveis de ambiente do Supabase não configuradas");
-        return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
-      }
-      const supabase = createClient<Database>(url, key, {
-        auth: { persistSession: false },
-        global: {
-          fetch: (input, init) => {
-            const h = new Headers(init?.headers);
-            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-              h.delete("Authorization");
-            }
-            h.set("apikey", key);
-            return fetch(input, { ...init, headers: h });
-          },
-        },
-      });
+      const supabase = await getCatalogDb();
+      if (!supabase) return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
 
       const { data: rows, error } = await supabase
         .from("produtos")
-        .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria, peso_g, altura_cm, largura_cm, comprimento_cm")
+        .select(
+          "id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria, peso_g, altura_cm, largura_cm, comprimento_cm",
+        )
         .eq("ativo", true);
 
       if (error) {
@@ -226,7 +264,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
         id: row.id,
         sku: row.sku,
         name: formatProductTitle(live.code ?? row.sku, live.name ?? row.nome),
-        price: live.price ?? Number(row.preco_venda) ?? 0,
+        price: (live.price ?? Number(row.preco_venda)) || 0,
         stock: live.stock ?? row.estoque_atual ?? 0,
         image: gallery[0] ?? null,
         gallery,
@@ -248,7 +286,11 @@ export const getProductDetail = createServerFn({ method: "GET" })
         warning: live.reason,
       };
     } catch (err) {
-      console.error("[Catalogo] Falha inesperada em getProductDetail:", err instanceof Error ? err.message : err, err instanceof Error ? err.stack : "");
+      console.error(
+        "[Catalogo] Falha inesperada em getProductDetail:",
+        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.stack : "",
+      );
       return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
     }
   });
@@ -260,27 +302,14 @@ export const getProductDetail = createServerFn({ method: "GET" })
 export const listBestSellersByCategory = createServerFn({ method: "GET" }).handler(
   async (): Promise<BestSellersResult> => {
     try {
-      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
-      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
-      if (!key || !url) return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
-
-      const supabase = createClient<Database>(url, key, {
-        auth: { persistSession: false },
-        global: {
-          fetch: (input, init) => {
-            const h = new Headers(init?.headers);
-            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-              h.delete("Authorization");
-            }
-            h.set("apikey", key);
-            return fetch(input, { ...init, headers: h });
-          },
-        },
-      });
+      const supabase = await getCatalogDb();
+      if (!supabase) return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };
 
       const { data: rows, error } = await supabase
         .from("produtos")
-        .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+        .select(
+          "id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria",
+        )
         .eq("ativo", true)
         .gt("estoque_atual", 1)
         .order("estoque_atual", { ascending: false });
@@ -341,10 +370,12 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
         console.warn(`[Catalogo] Best sellers: Bling zerou o estoque; usando saldo do banco`);
       }
 
-      const groups = CATEGORY_SLUGS.filter((s) => (byCategory.get(s)?.length ?? 0) > 0).map((s) => ({
-        slug: s,
-        products: (byCategory.get(s) ?? []).slice(0, 12),
-      }));
+      const groups = CATEGORY_SLUGS.filter((s) => (byCategory.get(s)?.length ?? 0) > 0).map(
+        (s) => ({
+          slug: s,
+          products: (byCategory.get(s) ?? []).slice(0, 12),
+        }),
+      );
 
       return { groups, source: bling.map ? "bling" : "banco", warning };
     } catch (err) {
