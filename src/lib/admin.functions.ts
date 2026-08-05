@@ -34,10 +34,14 @@ export const getMyRole = createServerFn({ method: "GET" })
 
 export const promoteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    user_id: z.string().uuid(),
-    role: z.enum(["admin", "staff", "cliente"]),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        role: z.enum(["admin", "staff", "cliente"]),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
     const { error } = await context.supabase.rpc("promote_user", {
@@ -52,9 +56,7 @@ export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureStaff(context);
-    const { data: roles } = await context.supabase
-      .from("user_roles")
-      .select("user_id, role");
+    const { data: roles } = await context.supabase.from("user_roles").select("user_id, role");
     const { data: profiles } = await context.supabase
       .from("profiles")
       .select("id, email, full_name");
@@ -87,7 +89,9 @@ export const getBlingAuthUrl = createServerFn({ method: "GET" })
 
 export const exchangeBlingCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ code: z.string().min(1), state: z.string().optional() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ code: z.string().min(1), state: z.string().optional() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
 
@@ -103,7 +107,7 @@ export const exchangeBlingCode = createServerFn({ method: "POST" })
         refresh_token: tokenData.refresh_token,
         expires_at: expiresAt,
       },
-      { onConflict: "user_id" }
+      { onConflict: "user_id" },
     );
 
     if (error) throw new Error(`Erro ao salvar token: ${error.message}`);
@@ -137,14 +141,28 @@ export const getDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await ensureStaff(context);
     const startMonth = new Date();
-    startMonth.setDate(1); startMonth.setHours(0, 0, 0, 0);
+    startMonth.setDate(1);
+    startMonth.setHours(0, 0, 0, 0);
 
     const [pedidosMes, todosClientes, topProdutos, pagamentos, evolucao] = await Promise.all([
-      context.supabase.from("pedidos").select("valor_total, metodo_pagamento, status_pagamento, data_compra").gte("data_compra", startMonth.toISOString()),
+      context.supabase
+        .from("pedidos")
+        .select("valor_total, metodo_pagamento, status_pagamento, data_compra")
+        .gte("data_compra", startMonth.toISOString()),
       context.supabase.from("clientes").select("id", { count: "exact", head: true }),
-      context.supabase.from("itens_pedido").select("produto_id, quantidade, produtos(nome, sku)").limit(500),
-      context.supabase.from("pedidos").select("metodo_pagamento, valor_total").eq("status_pagamento", "pago"),
-      context.supabase.from("pedidos").select("data_compra, valor_total").eq("status_pagamento", "pago").gte("data_compra", new Date(Date.now() - 30 * 86400000).toISOString()),
+      context.supabase
+        .from("itens_pedido")
+        .select("produto_id, quantidade, produtos(nome, sku)")
+        .limit(500),
+      context.supabase
+        .from("pedidos")
+        .select("metodo_pagamento, valor_total")
+        .eq("status_pagamento", "pago"),
+      context.supabase
+        .from("pedidos")
+        .select("data_compra, valor_total")
+        .eq("status_pagamento", "pago")
+        .gte("data_compra", new Date(Date.now() - 30 * 86400000).toISOString()),
     ]);
 
     const pagos = (pedidosMes.data ?? []).filter((p: any) => p.status_pagamento === "pago");
@@ -155,15 +173,23 @@ export const getDashboard = createServerFn({ method: "GET" })
     const map = new Map<string, { nome: string; sku: string; qty: number }>();
     for (const it of topProdutos.data ?? []) {
       const key = it.produto_id;
-      const cur = map.get(key) ?? { nome: it.produtos?.nome ?? "-", sku: it.produtos?.sku ?? "", qty: 0 };
+      const cur = map.get(key) ?? {
+        nome: it.produtos?.nome ?? "-",
+        sku: it.produtos?.sku ?? "",
+        qty: 0,
+      };
       cur.qty += it.quantidade;
       map.set(key, cur);
     }
     const top5 = [...map.values()].sort((a, b) => b.qty - a.qty).slice(0, 5);
 
     // Pagamentos
-    const pixTotal = (pagamentos.data ?? []).filter((p: any) => p.metodo_pagamento === "pix").reduce((s: number, p: any) => s + Number(p.valor_total), 0);
-    const cartaoTotal = (pagamentos.data ?? []).filter((p: any) => p.metodo_pagamento === "cartao").reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+    const pixTotal = (pagamentos.data ?? [])
+      .filter((p: any) => p.metodo_pagamento === "pix")
+      .reduce((s: number, p: any) => s + Number(p.valor_total), 0);
+    const cartaoTotal = (pagamentos.data ?? [])
+      .filter((p: any) => p.metodo_pagamento === "cartao")
+      .reduce((s: number, p: any) => s + Number(p.valor_total), 0);
 
     // Evolução por dia
     const evoMap = new Map<string, number>();
@@ -171,7 +197,9 @@ export const getDashboard = createServerFn({ method: "GET" })
       const d = new Date(p.data_compra).toISOString().slice(0, 10);
       evoMap.set(d, (evoMap.get(d) ?? 0) + Number(p.valor_total));
     }
-    const evolucaoDiaria = [...evoMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([data, total]) => ({ data, total }));
+    const evolucaoDiaria = [...evoMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([data, total]) => ({ data, total }));
 
     return {
       kpi: {
@@ -194,7 +222,10 @@ export const listProdutos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureStaff(context);
-    const { data, error } = await context.supabase.from("produtos").select("*, fornecedores(razao_social)").order("nome");
+    const { data, error } = await context.supabase
+      .from("produtos")
+      .select("*, fornecedores(razao_social)")
+      .order("nome");
     if (error) throw error;
     return data;
   });
@@ -224,7 +255,10 @@ export const upsertProduto = createServerFn({ method: "POST" })
     await ensureStaff(context);
     const { id, ...rest } = data;
     if (id) {
-      const { error } = await context.supabase.from("produtos").update(rest as any).eq("id", id);
+      const { error } = await context.supabase
+        .from("produtos")
+        .update(rest as any)
+        .eq("id", id);
       if (error) throw error;
     } else {
       const { error } = await context.supabase.from("produtos").insert(rest as any);
@@ -257,12 +291,26 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .maybeSingle();
 
-    console.error("[syncProdutoBling] tokenErr:", tokenErr, "tokenRow:", tokenRow ? "FOUND" : "NULL", "userId:", context.userId);
+    console.error(
+      "[syncProdutoBling] tokenErr:",
+      tokenErr,
+      "tokenRow:",
+      tokenRow ? "FOUND" : "NULL",
+      "userId:",
+      context.userId,
+    );
 
     if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
-    if (!tokenRow) throw new Error(`Bling não autorizado (userId: ${context.userId}). Conecte o Bling em Configurações.`);
+    if (!tokenRow)
+      throw new Error(
+        `Bling não autorizado (userId: ${context.userId}). Conecte o Bling em Configurações.`,
+      );
 
-    bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
+    bling.setTokens(
+      tokenRow.access_token,
+      tokenRow.refresh_token,
+      new Date(tokenRow.expires_at).getTime(),
+    );
 
     if (bling.isExpired) {
       try {
@@ -274,7 +322,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
             refresh_token: (bling as any).refreshToken,
             expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
           },
-          { onConflict: "user_id" }
+          { onConflict: "user_id" },
         );
       } catch (refreshErr: any) {
         throw new Error(formatBlingRefreshError(refreshErr));
@@ -336,7 +384,11 @@ async function ensureBlingTokens(context: { supabase: any; userId: string }) {
   if (tokenErr) throw new Error(`Erro ao buscar token Bling: ${tokenErr.message}`);
   if (!tokenRow) throw new Error("Bling não autorizado. Conecte o Bling em Configurações.");
 
-  bling.setTokens(tokenRow.access_token, tokenRow.refresh_token, new Date(tokenRow.expires_at).getTime());
+  bling.setTokens(
+    tokenRow.access_token,
+    tokenRow.refresh_token,
+    new Date(tokenRow.expires_at).getTime(),
+  );
 
   if (bling.isExpired) {
     try {
@@ -348,7 +400,7 @@ async function ensureBlingTokens(context: { supabase: any; userId: string }) {
           refresh_token: (bling as any).refreshToken,
           expires_at: new Date((bling as any).tokenExpiresAt).toISOString(),
         },
-        { onConflict: "user_id" }
+        { onConflict: "user_id" },
       );
     } catch (refreshErr: any) {
       throw new Error(formatBlingRefreshError(refreshErr));
@@ -369,10 +421,14 @@ export const countBlingProducts = createServerFn({ method: "GET" })
 
 export const importBlingBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    page: z.number().int().min(1),
-    limit: z.number().int().min(1).max(100),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        page: z.number().int().min(1),
+        limit: z.number().int().min(1).max(100),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
     const bling = await ensureBlingTokens(context);
@@ -535,10 +591,14 @@ export const backfillCategorias = createServerFn({ method: "POST" })
 
 export const updateStockBlingBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
-    page: z.number().int().min(1),
-    limit: z.number().int().min(1).max(100),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        page: z.number().int().min(1),
+        limit: z.number().int().min(1).max(100),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
     const bling = await ensureBlingTokens(context);
@@ -617,7 +677,10 @@ export const listFornecedores = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureStaff(context);
-    const { data, error } = await context.supabase.from("fornecedores").select("*").order("razao_social");
+    const { data, error } = await context.supabase
+      .from("fornecedores")
+      .select("*")
+      .order("razao_social");
     if (error) throw error;
     return data;
   });
@@ -662,7 +725,10 @@ export const listClientes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureStaff(context);
-    const { data, error } = await context.supabase.from("clientes").select("*").order("nome_completo");
+    const { data, error } = await context.supabase
+      .from("clientes")
+      .select("*")
+      .order("nome_completo");
     if (error) throw error;
     return data;
   });
@@ -672,9 +738,17 @@ export const getClienteDetalhe = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
-    const { data: cliente, error: e1 } = await context.supabase.from("clientes").select("*").eq("id", data.id).maybeSingle();
+    const { data: cliente, error: e1 } = await context.supabase
+      .from("clientes")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     if (e1) throw e1;
-    const { data: pedidos, error: e2 } = await context.supabase.from("pedidos").select("*").eq("cliente_id", data.id).order("data_compra", { ascending: false });
+    const { data: pedidos, error: e2 } = await context.supabase
+      .from("pedidos")
+      .select("*")
+      .eq("cliente_id", data.id)
+      .order("data_compra", { ascending: false });
     if (e2) throw e2;
     const pagos = (pedidos ?? []).filter((p: any) => p.status_pagamento === "pago");
     const ltv = pagos.reduce((s: number, p: any) => s + Number(p.valor_total), 0);
@@ -703,7 +777,9 @@ export const getPedidoDetalhe = createServerFn({ method: "GET" })
     await ensureStaff(context);
     const { data: pedido, error } = await context.supabase
       .from("pedidos")
-      .select("*, clientes(*), itens_pedido(*, produtos(nome, sku, peso_g, altura_cm, largura_cm, comprimento_cm))")
+      .select(
+        "*, clientes(*), itens_pedido(*, produtos(nome, sku, peso_g, altura_cm, largura_cm, comprimento_cm))",
+      )
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
@@ -713,11 +789,15 @@ export const getPedidoDetalhe = createServerFn({ method: "GET" })
 export const updatePedidoStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status_pagamento: z.enum(["pendente", "pago", "cancelado"]).optional(),
-      status_logistica: z.enum(["aguardando_envio", "etiqueta_gerada", "enviado", "entregue"]).optional(),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status_pagamento: z.enum(["pendente", "pago", "cancelado"]).optional(),
+        status_logistica: z
+          .enum(["aguardando_envio", "etiqueta_gerada", "enviado", "entregue"])
+          .optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
@@ -731,14 +811,16 @@ export const updatePedidoStatus = createServerFn({ method: "POST" })
 export const calcularFrete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      pedido_id: z.string().uuid(),
-      cep_destino: z.string().min(8),
-    }).parse(d),
+    z
+      .object({
+        pedido_id: z.string().uuid(),
+        cep_destino: z.string().min(8),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
-    
+
     const { superFrete } = await import("./integrations/superfrete.server");
 
     // Soma dimensões/peso dos itens
@@ -747,7 +829,10 @@ export const calcularFrete = createServerFn({ method: "POST" })
       .select("quantidade, produtos(peso_g, altura_cm, largura_cm, comprimento_cm)")
       .eq("pedido_id", data.pedido_id);
 
-    let pesoKg = 0, altura = 2, largura = 11, comprimento = 16;
+    let pesoKg = 0,
+      altura = 2,
+      largura = 11,
+      comprimento = 16;
     for (const it of (itens ?? []) as any[]) {
       pesoKg += ((it.produtos?.peso_g ?? 0) * it.quantidade) / 1000;
       altura = Math.max(altura, it.produtos?.altura_cm ?? 0);
@@ -766,10 +851,12 @@ export const calcularFrete = createServerFn({ method: "POST" })
 
 export const gerarEtiqueta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ pedido_id: z.string().uuid(), service_id: z.number() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ pedido_id: z.string().uuid(), service_id: z.number() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
-    
+
     // Buscar dados do pedido e cliente para gerar etiqueta
     const { data: pedido, error: pedidoError } = await context.supabase
       .from("pedidos")
@@ -782,12 +869,12 @@ export const gerarEtiqueta = createServerFn({ method: "POST" })
 
     // Gerar código de rastreio temporário (será substituído pelo real do SuperFrete)
     const tracking = `SF${Date.now()}`;
-    
+
     const { error } = await context.supabase
       .from("pedidos")
       .update({ tracking_code: tracking, status_logistica: "etiqueta_gerada" })
       .eq("id", data.pedido_id);
-    
+
     if (error) throw error;
     return { tracking_code: tracking, service_id: data.service_id };
   });

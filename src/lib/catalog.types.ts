@@ -49,7 +49,6 @@ export interface CatalogProductDetail extends CatalogProduct {
   variations: { id: string; name: string; sku: string; price: number; stock: number }[];
 }
 
-
 export interface CatalogDetailResult {
   product: CatalogProductDetail | null;
   source: "bling" | "banco" | "fallback";
@@ -75,8 +74,28 @@ const CATEGORY_KEYWORDS: Record<CatalogCategorySlug, string[]> = {
   piercings: ["piercing", "helix", "tragus", "septum", "barbell", "piercings de prata"],
   berloques: ["berloque", "charm", "charms", "pingente para pulseira"],
   aneis: ["anel", "alianca", "aliança", "solitario", "solitário", "falange", "aneis"],
-  brincos: ["brinco", "brincos", "argola", "argolas", "ear cuff", "earcuff", "ear cuffs", "solitario de orelha"],
-  colares: ["colar", "colares", "choker", "gargantilha", "gargantilhas", "torchon", "escapulario", "escapulário", "terco", "terço"],
+  brincos: [
+    "brinco",
+    "brincos",
+    "argola",
+    "argolas",
+    "ear cuff",
+    "earcuff",
+    "ear cuffs",
+    "solitario de orelha",
+  ],
+  colares: [
+    "colar",
+    "colares",
+    "choker",
+    "gargantilha",
+    "gargantilhas",
+    "torchon",
+    "escapulario",
+    "escapulário",
+    "terco",
+    "terço",
+  ],
   pulseiras: ["pulseira", "bracelete", "braceletes", "riviera", "cubano", "pulseiras"],
   pingentes: ["pingente", "pingentes", "simbolo", "símbolo", "medalha"],
   cuidados: ["flanela", "liquido", "líquido", "limpeza", "polimento", "polish", "cuidados"],
@@ -113,14 +132,19 @@ function escapeRegex(v: string) {
  * categorias ("combine com brincos e pulseiras") só no final. Retorna `null`
  * quando nenhuma palavra-chave bate.
  */
-export function categorizeProduct(nome: string | null | undefined, descricao: string | null | undefined) {
+export function categorizeProduct(
+  nome: string | null | undefined,
+  descricao: string | null | undefined,
+) {
   const text = normalizeText(`${nome ?? ""} ${descricao ?? ""}`);
   if (!text.trim()) return null;
 
   let best: { idx: number; slug: CatalogCategorySlug } | null = null;
   for (const slug of Object.keys(CATEGORY_KEYWORDS) as CatalogCategorySlug[]) {
     for (const kw of CATEGORY_KEYWORDS[slug]) {
-      const m = text.match(new RegExp(`(?:^|[^a-z0-9])${escapeRegex(normalizeText(kw))}(?:$|[^a-z0-9])`));
+      const m = text.match(
+        new RegExp(`(?:^|[^a-z0-9])${escapeRegex(normalizeText(kw))}(?:$|[^a-z0-9])`),
+      );
       if (m && m.index !== undefined && (!best || m.index < best.idx)) {
         best = { idx: m.index, slug };
       }
@@ -151,7 +175,10 @@ export interface BestSellersResult {
  * Título de exibição: código (SKU) do Bling seguido do nome do produto.
  * Evita duplicar o código quando o nome do Bling já começa com ele.
  */
-export function formatProductTitle(sku: string | null | undefined, name: string | null | undefined) {
+export function formatProductTitle(
+  sku: string | null | undefined,
+  name: string | null | undefined,
+) {
   const code = (sku ?? "").trim();
   const title = (name ?? "").trim();
   if (!code) return title;
