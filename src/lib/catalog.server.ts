@@ -63,7 +63,6 @@ export interface BlingDetail {
   descriptionLong: string | null;
   descriptionShort: string | null;
 
-
   images: string[];
   brand: string | null;
   weightG: number | null;
@@ -81,7 +80,6 @@ const EMPTY: BlingDetail = {
   description: null,
   descriptionLong: null,
   descriptionShort: null,
-
 
   images: [],
   brand: null,
@@ -116,7 +114,8 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
     const found = await bling.searchProduct(sku);
     if (!found) return { ...EMPTY, reason: "bling_indisponivel" };
 
-    const full = (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
+    const full =
+      (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
     const stockMap = await bling.getStockBalances([found.id]);
 
     const images: string[] = [];
@@ -164,8 +163,7 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
         (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
       descriptionLong:
         (full?.descricaoComplementar || full?.descricao || full?.descricaoCurta || null) ?? null,
-      descriptionShort:
-        (full?.descricaoCurta || full?.descricao || null) ?? null,
+      descriptionShort: (full?.descricaoCurta || full?.descricao || null) ?? null,
       images,
 
       brand: full?.marca ?? null,
