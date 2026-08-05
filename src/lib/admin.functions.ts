@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { CATEGORY_SLUGS, categorizeProduct, type CatalogCategorySlug } from "./catalog.types";
 
 async function ensureStaff(context: { supabase: any; userId: string }) {
   const { data: roles } = await (context.supabase as any)
@@ -387,12 +388,12 @@ export const importBlingBatch = createServerFn({ method: "POST" })
 
     const { data: existingProdutos } = await context.supabase
       .from("produtos")
-      .select("sku, imagem_url, descricao");
+      .select("sku, imagem_url, descricao, categoria");
 
     const existingBySku = new Map(
       (existingProdutos ?? []).map((p: any) => [
         (p.sku ?? "").trim(),
-        { imagem_url: p.imagem_url, descricao: p.descricao },
+        { imagem_url: p.imagem_url, descricao: p.descricao, categoria: p.categoria },
       ]),
     );
 
@@ -418,13 +419,15 @@ export const importBlingBatch = createServerFn({ method: "POST" })
       const imagem_url = images[0] ?? null;
       const descricao =
         bp.descricaoComplementar || bp.descricaoCurta || bp.descricao || bp.nome || null;
+      const categoria = categorizeProduct(bp.nome, descricao);
 
       const existing = existingBySku.get(sku);
 
       if (existing) {
         const needsBackfill =
           (!existing.imagem_url && imagem_url) ||
-          (!existing.descricao && descricao && descricao !== bp.nome);
+          (!existing.descricao && descricao && descricao !== bp.nome) ||
+          (!existing.categoria && categoria);
         if (!needsBackfill) {
           skipped++;
           continue;
@@ -432,7 +435,7 @@ export const importBlingBatch = createServerFn({ method: "POST" })
         try {
           const { error } = await context.supabase
             .from("produtos")
-            .update({ imagem_url, galeria_urls, descricao })
+            .update({ imagem_url, galeria_urls, descricao, ...(categoria ? { categoria } : {}) })
             .eq("sku", sku);
           if (error) {
             errors++;
@@ -453,6 +456,7 @@ export const importBlingBatch = createServerFn({ method: "POST" })
           estoque_atual: estoque,
           estoque_minimo: 0,
           ativo: bp.situacao === "A",
+          categoria,
           descricao,
           imagem_url,
           galeria_urls,
@@ -462,7 +466,7 @@ export const importBlingBatch = createServerFn({ method: "POST" })
           errors++;
         } else {
           imported++;
-          existingBySku.set(sku, { imagem_url, descricao });
+          existingBySku.set(sku, { imagem_url, descricao, categoria });
         }
       } catch {
         errors++;
@@ -480,6 +484,53 @@ export const countProdutosCadastrados = createServerFn({ method: "GET" })
       .from("produtos")
       .select("sku", { count: "exact", head: true });
     return { total: count ?? 0 };
+  });
+
+/**
+ * Classifica automaticamente todos os produtos que ainda estão sem categoria,
+ * usando o nome/descrição. Também corrige produtos classificados em categoria
+ * inválida. Devolve quantos foram atualizados.
+ */
+export const backfillCategorias = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureStaff(context);
+
+    const { data: rows, error } = await context.supabase
+      .from("produtos")
+      .select("id, sku, nome, descricao, categoria");
+
+    if (error) throw new Error(`Erro ao listar produtos: ${error.message}`);
+
+    const updated: string[] = [];
+    const skipped: string[] = [];
+
+    for (const r of rows ?? []) {
+      const cat = categorizeProduct(r.nome, r.descricao);
+      const current = (r.categoria ?? "").trim();
+      const needsUpdate =
+        !current && cat
+          ? true
+          : current && !(CATEGORY_SLUGS as readonly string[]).includes(current) && cat
+            ? true
+            : false;
+
+      if (needsUpdate) {
+        const { error: updErr } = await context.supabase
+          .from("produtos")
+          .update({ categoria: cat })
+          .eq("id", r.id);
+        if (updErr) {
+          console.error(`[Categorias] Erro ao atualizar ${r.sku ?? r.id}:`, updErr.message);
+        } else {
+          updated.push(r.sku ?? r.id);
+        }
+      } else {
+        skipped.push(r.sku ?? r.id);
+      }
+    }
+
+    return { updated: updated.length, skipped: skipped.length, total: (rows ?? []).length };
   });
 
 export const updateStockBlingBatch = createServerFn({ method: "POST" })

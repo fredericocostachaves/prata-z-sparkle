@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku, formatProductTitle } from "./catalog.types";
+import { CATEGORY_SLUGS, categorySearchKeywords, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, type BestSellersResult, slugifySku, formatProductTitle } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
   try {
@@ -80,7 +80,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       });
 
       console.log(`[Catalogo] Consultando categoria "${data.slug}"...`, { key: key?.slice(0, 10), url });
-      const { data: rows, error } = await supabase
+      let { data: rows, error } = await supabase
         .from("produtos")
         .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
         .eq("categoria", data.slug)
@@ -91,6 +91,30 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       if (error) {
         console.error(`[Catalogo] Erro ao listar produtos (categoria: ${data.slug}):`, error.message);
         return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+      }
+
+      // Produtos ainda sem categoria preenchida (importados antes da classificação):
+      // busca por palavra-chave no NOME para não deixar a vitrine vazia. A descrição
+      // não entra aqui porque ela costuma citar outras categorias ("combine com
+      // brincos e pulseiras"), o que poluiria o resultado.
+      if ((rows?.length ?? 0) === 0) {
+        const keywords = categorySearchKeywords(data.slug);
+        if (keywords.length) {
+          const orFilter = keywords.map((kw) => `nome.ilike.%${kw}%`).join(",");
+          const res = await supabase
+            .from("produtos")
+            .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+            .eq("ativo", true)
+            .gte("estoque_atual", 1)
+            .or(orFilter)
+            .order("nome");
+          if (res.error) {
+            console.error(`[Catalogo] Erro na busca por palavra-chave (${data.slug}):`, res.error.message);
+          } else {
+            rows = res.data;
+            console.log(`[Catalogo] Categoria "${data.slug}" vazia; palavra-chave encontrou ${res.data?.length ?? 0} produto(s)`);
+          }
+        }
       }
 
       console.log(`[Catalogo] Encontrados ${rows?.length ?? 0} produtos para "${data.slug}"`);
@@ -104,27 +128,36 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       // Saldo em tempo real do Bling quando as credenciais estiverem configuradas
       const bling = await fetchBlingStock();
 
-      const products: CatalogProduct[] = (rows ?? [])
-        .map((r) => {
-          const live = bling.map?.get((r.sku ?? "").trim());
-          return {
-            id: r.id,
-            sku: r.sku,
-            name: formatProductTitle(r.sku, r.nome),
-            price: Number(r.preco_venda) || 0,
-            stock: live ?? r.estoque_atual ?? 0,
-            image: r.imagem_url,
-            gallery: r.galeria_urls ?? [],
-            description: r.descricao,
-            category: r.categoria ?? data.slug,
-          };
-        })
-        .filter((p) => p.stock >= 1);
+      const mapProduct = (r: (typeof rows)[number]): CatalogProduct => ({
+        id: r.id,
+        sku: r.sku,
+        name: formatProductTitle(r.sku, r.nome),
+        price: Number(r.preco_venda) || 0,
+        stock: bling.map?.get((r.sku ?? "").trim()) ?? r.estoque_atual ?? 0,
+        image: r.imagem_url,
+        gallery: r.galeria_urls ?? [],
+        description: r.descricao,
+        category: r.categoria ?? data.slug,
+      });
+
+      let products: CatalogProduct[] = (rows ?? []).map(mapProduct).filter((p) => p.stock >= 1);
+
+      // Se o saldo "em tempo real" do Bling zerou tudo (SKUs divergentes, token de
+      // outra conta etc.), não esvaziamos a vitrine: usamos o saldo do banco.
+      let warning = bling.reason;
+      if (products.length === 0 && (rows ?? []).length > 0 && bling.map) {
+        const dbOnly = (rows ?? []).map((r) => ({ ...mapProduct(r), stock: r.estoque_atual ?? 0 })).filter((p) => p.stock >= 1);
+        if (dbOnly.length > 0) {
+          products = dbOnly;
+          warning = "bling_indisponivel";
+          console.warn(`[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças)`);
+        }
+      }
 
       return {
         products,
         source: bling.map ? "bling" : "banco",
-        warning: bling.reason,
+        warning,
       };
     } catch (err) {
       console.error("[Catalogo] Falha inesperada em listCategoryProducts:", err instanceof Error ? err.message : err, err instanceof Error ? err.stack : "");
@@ -260,11 +293,13 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
       const bling = await fetchBlingStock();
 
       const byCategory = new Map<string, CatalogProduct[]>();
+      let zeroedByBling = false;
       for (const r of rows ?? []) {
         const slug = (r.categoria ?? "").trim();
         if (!(CATEGORY_SLUGS as readonly string[]).includes(slug)) continue;
         const live = bling.map?.get((r.sku ?? "").trim());
         const stock = live ?? r.estoque_atual ?? 0;
+        if (live === 0 && (r.estoque_atual ?? 0) > 1) zeroedByBling = true;
         if (stock <= 1) continue;
         const list = byCategory.get(slug) ?? [];
         list.push({
@@ -281,12 +316,37 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
         byCategory.set(slug, list);
       }
 
+      // Bling zerou o saldo de tudo: refaz com o saldo do banco para não esvaziar a vitrine.
+      let warning = bling.reason;
+      if (zeroedByBling && (rows ?? []).length > 0 && byCategory.size === 0) {
+        for (const r of rows ?? []) {
+          const slug = (r.categoria ?? "").trim();
+          if (!(CATEGORY_SLUGS as readonly string[]).includes(slug)) continue;
+          if ((r.estoque_atual ?? 0) <= 1) continue;
+          const list = byCategory.get(slug) ?? [];
+          list.push({
+            id: r.id,
+            sku: r.sku,
+            name: formatProductTitle(r.sku, r.nome),
+            price: Number(r.preco_venda) || 0,
+            stock: r.estoque_atual ?? 0,
+            image: r.imagem_url,
+            gallery: r.galeria_urls ?? [],
+            description: r.descricao,
+            category: slug,
+          });
+          byCategory.set(slug, list);
+        }
+        warning = "bling_indisponivel";
+        console.warn(`[Catalogo] Best sellers: Bling zerou o estoque; usando saldo do banco`);
+      }
+
       const groups = CATEGORY_SLUGS.filter((s) => (byCategory.get(s)?.length ?? 0) > 0).map((s) => ({
         slug: s,
         products: (byCategory.get(s) ?? []).slice(0, 12),
       }));
 
-      return { groups, source: bling.map ? "bling" : "banco", warning: bling.reason };
+      return { groups, source: bling.map ? "bling" : "banco", warning };
     } catch (err) {
       console.error("[Catalogo] Falha inesperada em listBestSellersByCategory:", err);
       return { groups: [], source: "fallback", warning: "catalogo_indisponivel" };

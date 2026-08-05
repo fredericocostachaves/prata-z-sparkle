@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw } from "lucide-react";
-import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch, syncProdutoEstoqueBling, countProdutosCadastrados } from "@/lib/admin.functions";
+import { AlertTriangle, Pencil, Trash2, Plus, CloudUpload, Download, RefreshCw, Tags } from "lucide-react";
+import { listProdutos, upsertProduto, deleteProduto, listFornecedores, syncProdutoBling, countBlingProducts, importBlingBatch, updateStockBlingBatch, syncProdutoEstoqueBling, countProdutosCadastrados, backfillCategorias } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -107,6 +107,7 @@ function ProdutosPage() {
   const importBatch = useServerFn(importBlingBatch);
   const getCadastrados = useServerFn(countProdutosCadastrados);
   const updateStockBatch = useServerFn(updateStockBlingBatch);
+  const classify = useServerFn(backfillCategorias);
 
   const load = useCallback(() => {
     list().then(setRows).catch((e) => toast.error(e.message));
@@ -262,6 +263,18 @@ function ProdutosPage() {
     }
   };
 
+  const onClassifyCategorias = async () => {
+    if (!confirm("Classificar automaticamente a categoria de todos os produtos com base no nome/descrição?")) return;
+    try {
+      const result = await classify({ data: undefined });
+      if (result.updated > 0) toast.success(`${result.updated} produto(s) classificados em uma categoria`);
+      else toast.info("Nenhum produto precisou de classificação");
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <SyncOverlay progress={progress} />
@@ -276,6 +289,9 @@ function ProdutosPage() {
         </button>
         <button onClick={onUpdateStockBling} disabled={progress.phase !== "idle" && progress.phase !== "done"} className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
           <RefreshCw className="h-4 w-4" /> Atualizar Estoque
+        </button>
+        <button onClick={onClassifyCategorias} disabled={progress.phase !== "idle" && progress.phase !== "done"} title="Preenche a categoria dos produtos pela descrição/nome" className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50">
+          <Tags className="h-4 w-4" /> Classificar Categorias
         </button>
         <button onClick={() => setEditing({})} className="bg-foreground text-background px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2">
           <Plus className="h-4 w-4" /> Novo
