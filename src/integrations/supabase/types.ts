@@ -177,6 +177,13 @@ export type Database = {
             referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "itens_pedido_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "vw_catalogo_produtos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pedidos: {
@@ -362,7 +369,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_catalogo_produtos: {
+        Row: {
+          altura_cm: number | null
+          categoria: string | null
+          comprimento_cm: number | null
+          descricao: string | null
+          galeria_urls: string[] | null
+          id: string | null
+          imagem_url: string | null
+          largura_cm: number | null
+          nome: string | null
+          peso_g: number | null
+          preco_venda: number | null
+          sku: string | null
+        }
+        Insert: {
+          altura_cm?: number | null
+          categoria?: string | null
+          comprimento_cm?: number | null
+          descricao?: string | null
+          galeria_urls?: string[] | null
+          id?: string | null
+          imagem_url?: string | null
+          largura_cm?: number | null
+          nome?: string | null
+          peso_g?: number | null
+          preco_venda?: number | null
+          sku?: string | null
+        }
+        Update: {
+          altura_cm?: number | null
+          categoria?: string | null
+          comprimento_cm?: number | null
+          descricao?: string | null
+          galeria_urls?: string[] | null
+          id?: string | null
+          imagem_url?: string | null
+          largura_cm?: number | null
+          nome?: string | null
+          peso_g?: number | null
+          preco_venda?: number | null
+          sku?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
