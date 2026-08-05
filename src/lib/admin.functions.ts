@@ -387,23 +387,63 @@ export const importBlingBatch = createServerFn({ method: "POST" })
 
     const { data: existingProdutos } = await context.supabase
       .from("produtos")
-      .select("sku");
+      .select("sku, imagem_url, descricao");
 
-    const existingSkus = new Set((existingProdutos ?? []).map((p: any) => p.sku));
+    const existingBySku = new Map(
+      (existingProdutos ?? []).map((p: any) => [
+        (p.sku ?? "").trim(),
+        { imagem_url: p.imagem_url, descricao: p.descricao },
+      ]),
+    );
 
     let imported = 0;
     let skipped = 0;
+    let backfilled = 0;
     let errors = 0;
 
     for (const bp of blingProducts) {
-      const sku = bp.codigo || `${bp.id}`;
-
-      if (existingSkus.has(sku)) {
-        skipped++;
-        continue;
-      }
+      const sku = (bp.codigo || `${bp.id}`).trim();
 
       const estoque = stockMap.get(bp.id) ?? 0;
+
+      const images: string[] = [];
+      const mi = bp.midia?.imagens;
+      for (const group of [mi?.internas, mi?.externas]) {
+        for (const img of group ?? []) {
+          const url = img?.link ?? img?.url;
+          if (url && !images.includes(url)) images.push(url);
+        }
+      }
+      const galeria_urls = images;
+      const imagem_url = images[0] ?? null;
+      const descricao =
+        bp.descricaoComplementar || bp.descricaoCurta || bp.descricao || bp.nome || null;
+
+      const existing = existingBySku.get(sku);
+
+      if (existing) {
+        const needsBackfill =
+          (!existing.imagem_url && imagem_url) ||
+          (!existing.descricao && descricao && descricao !== bp.nome);
+        if (!needsBackfill) {
+          skipped++;
+          continue;
+        }
+        try {
+          const { error } = await context.supabase
+            .from("produtos")
+            .update({ imagem_url, galeria_urls, descricao })
+            .eq("sku", sku);
+          if (error) {
+            errors++;
+          } else {
+            backfilled++;
+          }
+        } catch {
+          errors++;
+        }
+        continue;
+      }
 
       try {
         const { error } = await context.supabase.from("produtos").insert({
@@ -413,20 +453,23 @@ export const importBlingBatch = createServerFn({ method: "POST" })
           estoque_atual: estoque,
           estoque_minimo: 0,
           ativo: bp.situacao === "A",
+          descricao,
+          imagem_url,
+          galeria_urls,
         });
 
         if (error) {
           errors++;
         } else {
           imported++;
-          existingSkus.add(sku);
+          existingBySku.set(sku, { imagem_url, descricao });
         }
       } catch {
         errors++;
       }
     }
 
-    return { imported, skipped, errors, processed: blingProducts.length };
+    return { imported, skipped, backfilled, errors, processed: blingProducts.length };
   });
 
 export const countProdutosCadastrados = createServerFn({ method: "GET" })

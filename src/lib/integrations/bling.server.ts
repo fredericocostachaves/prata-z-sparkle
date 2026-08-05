@@ -5,6 +5,15 @@ export interface BlingProduct {
   preco: number;
   tipo: string;
   situacao: string;
+  descricao?: string | null;
+  descricaoComplementar?: string | null;
+  descricaoCurta?: string | null;
+  midia?: {
+    imagens?: {
+      internas?: { link?: string; url?: string }[];
+      externas?: { link?: string; url?: string }[];
+    };
+  };
 }
 
 export interface BlingStockBalance {
@@ -326,7 +335,7 @@ class BlingClient {
 
   async listProducts(page = 1, limit = 100): Promise<{ data: BlingProduct[]; total: number }> {
     const data = await this.request<{ data: BlingProduct[] }>(
-      `/produtos?pagina=${page}&limite=${limit}&criterio=1`
+      `/produtos?pagina=${page}&limite=${limit}&criterio=1&opcoes[]=comMidiaComVariacao&opcoes[]=comDescricaoCurta`
     );
     const total = data.data?.length ?? 0;
     return { data: data.data ?? [], total };

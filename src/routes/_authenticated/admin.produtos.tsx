@@ -19,6 +19,7 @@ type SyncProgress = {
   total: number;
   imported: number;
   skipped: number;
+  backfilled?: number;
   errors: number;
   error?: string;
 };
@@ -62,6 +63,7 @@ function SyncOverlay({ progress }: { progress: SyncProgress }) {
               </p>
               <div className="flex justify-center gap-4 text-xs">
                 {progress.imported > 0 && <span className="text-green-600">{progress.imported} {importedLabel}</span>}
+                {(progress.backfilled ?? 0) > 0 && <span className="text-blue-600">{progress.backfilled} imagens/descrições atualizadas</span>}
                 {progress.skipped > 0 && <span className="text-muted-foreground">{progress.skipped} {skippedLabel}</span>}
                 {progress.errors > 0 && <span className="text-red-600">{progress.errors} erros</span>}
               </div>
@@ -92,6 +94,7 @@ function ProdutosPage() {
     total: 0,
     imported: 0,
     skipped: 0,
+    backfilled: 0,
     errors: 0,
   });
   const list = useServerFn(listProdutos);
@@ -153,29 +156,31 @@ function ProdutosPage() {
   };
 
   const onImportBling = async () => {
-    setProgress({ phase: "counting", action: "import", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+    setProgress({ phase: "counting", action: "import", current: 0, total: 0, imported: 0, skipped: 0, backfilled: 0, errors: 0 });
 
     try {
       const { total } = await getCount({ data: undefined });
 
       if (total === 0) {
         toast.info("Nenhum produto encontrado no Bling");
-        setProgress({ phase: "idle", action: "import", current: 0, total: 0, imported: 0, skipped: 0, errors: 0 });
+        setProgress({ phase: "idle", action: "import", current: 0, total: 0, imported: 0, skipped: 0, backfilled: 0, errors: 0 });
         return;
       }
 
-      setProgress({ phase: "importing", action: "import", current: 0, total, imported: 0, skipped: 0, errors: 0 });
+      setProgress({ phase: "importing", action: "import", current: 0, total, imported: 0, skipped: 0, backfilled: 0, errors: 0 });
 
       const batchSize = 50;
       const pages = Math.ceil(total / batchSize);
       let imported = 0;
       let skipped = 0;
+      let backfilled = 0;
       let errors = 0;
 
       for (let page = 1; page <= pages; page++) {
         const result = await importBatch({ data: { page, limit: batchSize } });
         imported += result.imported;
         skipped += result.skipped;
+        backfilled += result.backfilled ?? 0;
         errors += result.errors;
 
         setProgress({
@@ -185,16 +190,18 @@ function ProdutosPage() {
           total,
           imported,
           skipped,
+          backfilled,
           errors,
         });
       }
 
-      setProgress({ phase: "done", action: "import", current: total, total, imported, skipped, errors });
+      setProgress({ phase: "done", action: "import", current: total, total, imported, skipped, backfilled, errors });
 
       if (imported > 0) toast.success(`${imported} produto(s) importado(s) do Bling`);
+      if (backfilled > 0) toast.success(`${backfilled} produto(s) com imagem/descrição atualizada`);
       if (skipped > 0) toast.info(`${skipped} produto(s) já existente(s)`);
       if (errors > 0) toast.error(`${errors} erro(s) na importação`);
-      if (imported === 0 && skipped === 0 && errors === 0) toast.info("Nenhum produto novo encontrado");
+      if (imported === 0 && backfilled === 0 && skipped === 0 && errors === 0) toast.info("Nenhum produto novo encontrado");
 
       load();
     } catch (e: any) {
