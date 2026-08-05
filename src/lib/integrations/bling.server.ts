@@ -50,6 +50,31 @@ interface BlingTokenResponse {
 const TOKEN_URL = 'https://www.bling.com.br/Api/v3/oauth/token';
 const BASE_URL = 'https://www.bling.com.br/Api/v3';
 
+/**
+ * Converte uma falha de renovação do token do Bling em uma mensagem legível
+ * para o usuário, sem expor códigos de erro ou detalhes técnicos da API.
+ */
+export function formatBlingRefreshError(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  const lower = msg.toLowerCase();
+
+  const unauthorized =
+    lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('invalid_grant') ||
+    lower.includes('token inválido') ||
+    lower.includes('expirado') ||
+    lower.includes('revogado') ||
+    lower.includes('unauthorized') ||
+    lower.includes('forbidden');
+
+  if (unauthorized) {
+    return 'A conexão com o Bling expirou. Para continuar, reconecte o Bling em Configurações.';
+  }
+
+  return 'Não foi possível renovar a conexão com o Bling no momento. Tente novamente em instantes ou reconecte o Bling em Configurações.';
+}
+
 class BlingClient {
   private clientId: string;
   private clientSecret: string;

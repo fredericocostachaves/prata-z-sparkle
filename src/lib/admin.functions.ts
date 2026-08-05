@@ -248,7 +248,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await ensureStaff(context);
 
-    const { bling } = await import("./integrations/bling.server");
+    const { bling, formatBlingRefreshError } = await import("./integrations/bling.server");
 
     const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
       .from("bling_tokens")
@@ -276,7 +276,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
           { onConflict: "user_id" }
         );
       } catch (refreshErr: any) {
-        throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
+        throw new Error(formatBlingRefreshError(refreshErr));
       }
     }
 
@@ -324,7 +324,7 @@ export const syncProdutoBling = createServerFn({ method: "POST" })
 
 // ============ SYNC BLING -> SUPABASE ============
 async function ensureBlingTokens(context: { supabase: any; userId: string }) {
-  const { bling } = await import("./integrations/bling.server");
+  const { bling, formatBlingRefreshError } = await import("./integrations/bling.server");
 
   const { data: tokenRow, error: tokenErr } = await (context.supabase as any)
     .from("bling_tokens")
@@ -350,7 +350,7 @@ async function ensureBlingTokens(context: { supabase: any; userId: string }) {
         { onConflict: "user_id" }
       );
     } catch (refreshErr: any) {
-      throw new Error(`Token Bling expirado e refresh falhou: ${refreshErr.message}. Reconecte o Bling em Configurações.`);
+      throw new Error(formatBlingRefreshError(refreshErr));
     }
   }
 
