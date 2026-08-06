@@ -203,11 +203,23 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         if (dbOnly.length > 0) {
           products = dbOnly;
           warning = "bling_indisponivel";
-          debug =
-            debug ??
-            `mapa do Bling não tinha saldo para os produtos de "${data.slug}" (saldos do Bling vazios/zerados)`;
+          const dbSkus = (rows ?? []).map((r) => (r.sku ?? "").trim()).filter(Boolean);
+          const matched = dbSkus.filter((s) => bling.map!.has(s));
+          const matchedWithZero = matched.filter((s) => (bling.map!.get(s) ?? 0) <= 0);
+          const sampleMapKeys = [...bling.map!.keys()].slice(0, 5);
+          const sampleDbSkus = dbSkus.slice(0, 5);
+          const zeroEs = (rows ?? []).filter((r) => (r.estoque_atual ?? 0) <= 0).length;
+          debug = [
+            `mapa do Bling sem saldo p/ "${data.slug}"`,
+            `SKUs na cat: ${dbSkus.length}`,
+            `presentes no mapa: ${matched.length}`,
+            `dos quais zerados: ${matchedWithZero.length}`,
+            `DB estoque<=0: ${zeroEs}/${dbSkus.length}`,
+            `ex. mapa: [${sampleMapKeys.join(", ")}]`,
+            `ex. DB: [${sampleDbSkus.join(", ")}]`,
+          ].join(" | ");
           console.warn(
-            `[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças)`,
+            `[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças) — ${debug}`,
           );
         }
       }
