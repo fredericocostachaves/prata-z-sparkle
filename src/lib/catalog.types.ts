@@ -89,6 +89,8 @@ const CATEGORY_KEYWORDS: Record<CatalogCategorySlug, string[]> = {
   colares: [
     "colar",
     "colares",
+    "corrente",
+    "correntes",
     "choker",
     "gargantilha",
     "gargantilhas",
@@ -112,7 +114,7 @@ const CATEGORY_SEARCH_KEYWORDS: Record<CatalogCategorySlug, string[]> = {
   brincos: ["brinco", "argola", "ear cuff", "earcuff"],
   pulseiras: ["pulseira", "bracelete", "riviera", "cubano"],
   pingentes: ["pingente"],
-  colares: ["colar", "choker", "gargantilha", "torchon"],
+  colares: ["colar", "corrente", "choker", "gargantilha", "torchon"],
   cuidados: ["flanela", "liquido", "líquido", "limpeza", "polimento", "cuidados"],
 };
 

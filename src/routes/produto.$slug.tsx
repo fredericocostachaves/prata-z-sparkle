@@ -9,6 +9,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { getProductDetail } from "@/lib/catalog.functions";
 import type { CatalogDetailResult, CatalogProductDetail } from "@/lib/catalog.types";
 import { SITE_URL, productJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { stripHtml } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import catFallback from "@/assets/cat-colar.jpg";
@@ -31,10 +32,11 @@ export const Route = createFileRoute("/produto/$slug")({
     const remote = loaderData?.product ?? null;
     const local = getProductBySlug(params.slug);
     const name = remote?.name ?? local?.name ?? null;
-    const description =
+    const description = stripHtml(
       remote?.description ??
-      local?.description ??
-      "Joia em prata 925 legítima com garantia de autenticidade e atendimento personalizado.";
+        local?.description ??
+        "Joia em prata 925 legítima com garantia de autenticidade e atendimento personalizado.",
+    );
     const price = remote?.price ?? local?.price ?? null;
     const stock = remote?.stock ?? local?.stock ?? 0;
     const image = remote?.gallery?.[0] ?? remote?.image ?? local?.images?.[0] ?? null;
@@ -165,7 +167,7 @@ function ProductPage() {
         category: (remote.category || local?.category || "colares") as Product["category"],
         price: remote.price,
         images,
-        description: remote.description ?? "",
+        description: stripHtml(remote.description ?? ""),
         highlights: local?.highlights ?? [],
         sizes: local?.sizes,
         stock: remote.stock,
@@ -182,14 +184,7 @@ function ProductPage() {
   const blingDescricaoCurta = useMemo(() => {
     const raw = remote?.descriptionShort ?? remote?.description ?? null;
     if (!raw) return null;
-    const text = raw
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    const text = stripHtml(raw);
     return text || null;
   }, [remote]);
 
