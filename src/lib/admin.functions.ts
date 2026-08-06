@@ -582,6 +582,87 @@ export const backfillCategorias = createServerFn({ method: "POST" })
     return { updated: updated.length, skipped: skipped.length, total: (rows ?? []).length };
   });
 
+/**
+ * Preenche a imagem de capa/galeria dos produtos que ainda estão sem imagem,
+ * buscando cada produto no Bling pelo DETALHE (o endpoint de lista não traz as
+ * URLs das imagens). Processa em lotes (offset/limit) para caber no orçamento
+ * do worker; o front repete chamadas até cobrir todos.
+ */
+export const backfillImagensBling = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        offset: z.number().int().min(0),
+        limit: z.number().int().min(1).max(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureStaff(context);
+    const bling = await ensureBlingTokens(context);
+
+    const {
+      data: rows,
+      error,
+      count,
+    } = await context.supabase
+      .from("produtos")
+      .select("id, sku", { count: "exact" })
+      .is("imagem_url", null)
+      .order("sku")
+      .range(data.offset, data.offset + data.limit - 1);
+
+    if (error) throw new Error(`Erro ao listar produtos: ${error.message}`);
+
+    let updated = 0;
+    let semImagem = 0;
+    let errors = 0;
+
+    for (const r of rows ?? []) {
+      const sku = (r.sku ?? "").trim();
+      if (!sku) {
+        errors++;
+        continue;
+      }
+      try {
+        const found = await bling.searchProduct(sku);
+        if (!found) {
+          semImagem++;
+          continue;
+        }
+        const full = await bling.getProductById(found.id);
+        const images = extractBlingImages(full?.midia ?? found.midia);
+        if (!images.length) {
+          semImagem++;
+          continue;
+        }
+        const { error: updErr } = await context.supabase
+          .from("produtos")
+          .update({ imagem_url: images[0], galeria_urls: images })
+          .eq("id", r.id);
+        if (updErr) {
+          errors++;
+        } else {
+          updated++;
+        }
+      } catch (err) {
+        console.error(`[Imagens] Erro em ${sku}:`, err);
+        errors++;
+      }
+      await new Promise((res) => setTimeout(res, 150));
+    }
+
+    return {
+      updated,
+      semImagem,
+      errors,
+      processed: (rows ?? []).length,
+      total: count ?? 0,
+      offset: data.offset,
+    };
+  });
+
 export const updateStockBlingBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>

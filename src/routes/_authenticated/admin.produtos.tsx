@@ -24,6 +24,7 @@ import {
   syncProdutoEstoqueBling,
   countProdutosCadastrados,
   backfillCategorias,
+  backfillImagensBling,
 } from "@/lib/admin.functions";
 import { formatPrice } from "@/data/products";
 
@@ -155,6 +156,7 @@ function ProdutosPage() {
   const getCadastrados = useServerFn(countProdutosCadastrados);
   const updateStockBatch = useServerFn(updateStockBlingBatch);
   const classify = useServerFn(backfillCategorias);
+  const backfillImgs = useServerFn(backfillImagensBling);
 
   const load = useCallback(() => {
     list()
@@ -434,6 +436,79 @@ function ProdutosPage() {
     }
   };
 
+  const onBackfillImagens = async () => {
+    if (
+      !confirm(
+        "Buscar no Bling a imagem dos produtos que estão sem foto? Pode levar alguns minutos (processa em lotes).",
+      )
+    )
+      return;
+    const batchSize = 20;
+    let offset = 0;
+    let updated = 0;
+    let semImagem = 0;
+    let errors = 0;
+    setProgress({
+      phase: "importing",
+      action: "import",
+      current: 0,
+      total: 0,
+      imported: 0,
+      skipped: 0,
+      backfilled: 0,
+      errors: 0,
+    });
+    try {
+      let total = 0;
+      for (;;) {
+        const result = await backfillImgs({ data: { offset, limit: batchSize } });
+        total = result.total;
+        updated += result.updated;
+        semImagem += result.semImagem;
+        errors += result.errors;
+        offset += result.processed;
+        setProgress({
+          phase: "importing",
+          action: "import",
+          current: Math.min(offset, total),
+          total,
+          imported: 0,
+          skipped: 0,
+          backfilled: updated,
+          errors,
+        });
+        if (result.processed < batchSize) break;
+      }
+      setProgress({
+        phase: "done",
+        action: "import",
+        current: total,
+        total,
+        imported: 0,
+        skipped: 0,
+        backfilled: updated,
+        errors,
+      });
+      if (updated > 0) toast.success(`${updated} produto(s) com imagem atualizada do Bling`);
+      if (semImagem > 0) toast.info(`${semImagem} sem imagem no Bling`);
+      if (errors > 0) toast.error(`${errors} erro(s)`);
+      load();
+    } catch (e: any) {
+      setProgress({
+        phase: "error",
+        action: "import",
+        current: 0,
+        total: 0,
+        imported: 0,
+        skipped: 0,
+        backfilled: 0,
+        errors: 0,
+        error: e.message,
+      });
+      toast.error(e.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <SyncOverlay progress={progress} />
@@ -464,6 +539,14 @@ function ProdutosPage() {
           className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50"
         >
           <Tags className="h-4 w-4" /> Classificar Categorias
+        </button>
+        <button
+          onClick={onBackfillImagens}
+          disabled={progress.phase !== "idle" && progress.phase !== "done"}
+          title="Busca no Bling a imagem dos produtos que estão sem foto"
+          className="border border-border px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-2 disabled:opacity-50"
+        >
+          <CloudUpload className="h-4 w-4" /> Atualizar Imagens
         </button>
         <button
           onClick={() => setEditing({})}
