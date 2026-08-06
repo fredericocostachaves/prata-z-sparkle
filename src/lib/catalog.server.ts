@@ -35,9 +35,14 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
     }
 
     const produtos = await bling.listAllProducts();
+    console.warn(`[Catálogo] Bling: ${produtos.length} produto(s) listados`);
     if (!produtos.length) return { map: null, reason: "bling_indisponivel" };
 
     const stock = await bling.getStockBalances(produtos.map((p) => p.id));
+    const positives = [...stock.values()].filter((n) => n > 0).length;
+    console.warn(
+      `[Catálogo] Bling: saldos retornados=${stock.size}, positivos=${positives}, totalProdutos=${produtos.length}`,
+    );
 
     const map = new Map<string, number>();
     for (const p of produtos) {
@@ -46,10 +51,23 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
       map.set(sku, stock.get(p.id) ?? 0);
     }
 
+    // Se o endpoint de saldos devolveu vazio/zerado, não vale a pena usar este
+    // "mapa em tempo real" (resultaria em tudo fora de estoque). Reporta como
+    // indisponível para o chamador usar o saldo do banco.
+    if (map.size > 0 && positives === 0) {
+      console.warn(
+        "[Catálogo] Bling: todos os saldos vieram zerados — tratando como indisponível (usando banco)",
+      );
+      return { map: null, reason: "bling_indisponivel" };
+    }
+
     cache = { at: Date.now(), map };
     return { map, reason: null };
   } catch (err) {
-    console.warn("[Catálogo] Estoque do Bling indisponível, usando banco:", err);
+    console.warn(
+      "[Catálogo] Estoque do Bling indisponível, usando banco:",
+      err instanceof Error ? err.message : err,
+    );
     return { map: null, reason: "bling_indisponivel" };
   }
 }

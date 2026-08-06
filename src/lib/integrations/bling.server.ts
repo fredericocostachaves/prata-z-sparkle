@@ -331,6 +331,8 @@ class BlingClient {
     if (productIds.length === 0) return stockMap;
 
     const batchSize = 50;
+    let batchOk = 0;
+    let batchErr = 0;
     for (let i = 0; i < productIds.length; i += batchSize) {
       const batch = productIds.slice(i, i + batchSize);
       const params = batch.map((id) => `idsProdutos[]=${id}`).join("&");
@@ -338,15 +340,24 @@ class BlingClient {
         const stockData = await this.request<{ data: BlingStockBalance[] }>(
           `/estoques/saldos?${params}`,
         );
-        for (const s of stockData.data ?? []) {
+        const arr = stockData.data ?? [];
+        if (i === 0 && arr.length > 0) {
+          console.warn("[Bling] Exemplo de saldo recebido:", JSON.stringify(arr[0]));
+        }
+        for (const s of arr) {
           const qty = s.saldoDisponivel ?? s.saldoFisicoTotal ?? 0;
           stockMap.set(s.idProduto, qty);
         }
+        batchOk++;
       } catch (err) {
+        batchErr++;
         console.warn("[Bling] Erro ao buscar estoques em lote:", err);
       }
       if (i + batchSize < productIds.length) await this.sleep(300);
     }
+    console.warn(
+      `[Bling] getStockBalances: batches ok=${batchOk}, erro=${batchErr}, saldos=${stockMap.size} de ${productIds.length} ids`,
+    );
     return stockMap;
   }
 
