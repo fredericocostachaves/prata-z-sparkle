@@ -429,6 +429,38 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
         console.warn(`[Catalogo] Best sellers: Bling zerou o estoque; usando saldo do banco`);
       }
 
+      // Produtos sem imagem no banco (ex.: importados antes do backfill de fotos)
+      // podem ter a foto disponível no Bling — a página de detalhe já a resolve ao
+      // vivo. Buscamos a capa no Bling aqui para o carrossel "Top de vendas" não
+      // exibir o "sem imagem" indevidamente (o produto tem foto, só não está no banco).
+      const missingImgs: CatalogProduct[] = [];
+      for (const list of byCategory.values()) {
+        for (const p of list) {
+          const hasImage = [p.image, ...(p.gallery ?? [])].some(
+            (v) => typeof v === "string" && v.trim().length > 0,
+          );
+          if (!hasImage && p.sku) missingImgs.push(p);
+        }
+      }
+
+      if (missingImgs.length > 0) {
+        const results = await Promise.allSettled(
+          missingImgs.map(async (p) => {
+            const detail = await fetchBlingDetail(String(p.sku).trim());
+            if (!detail?.images?.length) return;
+            p.image = detail.images[0];
+            const extras = detail.images.slice(1).filter(
+              (u) => !(p.gallery ?? []).includes(u),
+            );
+            if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
+          }),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed) {
+          console.warn(`[Catalogo] Best sellers: ${failed} imagem(ns) não resolvidas no Bling`);
+        }
+      }
+
       const groups = CATEGORY_SLUGS.filter((s) => (byCategory.get(s)?.length ?? 0) > 0).map(
         (s) => ({
           slug: s,
