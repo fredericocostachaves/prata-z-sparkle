@@ -188,27 +188,6 @@ function ProductPage() {
     return text || null;
   }, [remote]);
 
-  /** Características do Bling para "Materiais & acabamento" */
-  const blingMateriais = useMemo<string[]>(() => {
-    if (!remote) return [];
-    const items: string[] = [];
-    const skip = new Set(["Código (SKU)", "GTIN", "Unidade", "Observações"]);
-    for (const a of remote.attributes ?? []) {
-      if (!skip.has(a.label)) items.push(`${a.label}: ${a.value}`);
-    }
-    if (remote.brand && !items.some((i) => i.startsWith("Marca"))) {
-      items.unshift(`Marca: ${remote.brand}`);
-    }
-    if (remote.weightG) items.push(`Peso: ${remote.weightG} g`);
-    const d = remote.dimensions;
-    if (d && (d.height || d.width || d.length)) {
-      items.push(
-        `Dimensões (A×L×C): ${[d.height, d.width, d.length].map((n) => n ?? "—").join(" × ")} cm`,
-      );
-    }
-    return items;
-  }, [remote]);
-
 
   const notice =
     isError || data?.warning === "catalogo_indisponivel"
@@ -335,7 +314,13 @@ function ProductPage() {
             <p className="mt-6 text-3xl font-serif text-foreground">{formatPrice(product.price)}</p>
             <p className="mt-1 text-sm text-muted-foreground">{formatInstallment(product.price)}</p>
 
-            <p className="mt-8 text-muted-foreground leading-relaxed">{product.description}</p>
+            {blingDescricaoCurta ? (
+              <p className="mt-8 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                {blingDescricaoCurta}
+              </p>
+            ) : (
+              <p className="mt-8 text-muted-foreground leading-relaxed">{product.description}</p>
+            )}
 
             {product.sizes && product.sizes.length > 0 && (
               <div className="mt-8">
@@ -476,30 +461,7 @@ function ProductPage() {
         </article>
 
         {/* Conteúdo editorial — alimentado pelos dados do Bling quando disponíveis */}
-        <section className="mt-24 grid lg:grid-cols-2 gap-8 border-t border-border pt-16">
-          <div>
-            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Descrição do produto</p>
-            {blingDescricaoCurta ? (
-              <p className="mt-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                {blingDescricaoCurta}
-              </p>
-            ) : (
-              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                {blingMateriais.length ? (
-                  blingMateriais.map((m) => <li key={m}>• {m}</li>)
-                ) : (
-                  <>
-                    <li>• Liga: prata 925 (92,5% prata pura)</li>
-                    <li>• Acabamento: polido espelhado</li>
-                    <li>• Banho protetor antiescurecimento</li>
-                    <li>• Hipoalergênico e nickel-free</li>
-                  </>
-                )}
-              </ul>
-            )}
-          </div>
-
-
+        <section className="mt-24 border-t border-border pt-16">
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Como cuidar</p>
             <h2 className="mt-3 text-2xl font-serif text-foreground">Para durar por gerações</h2>
