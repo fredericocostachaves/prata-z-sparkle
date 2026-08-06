@@ -593,7 +593,7 @@ export const backfillImagensBling = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        offset: z.number().int().min(0),
+        cursor: z.string().optional().nullable(),
         limit: z.number().int().min(1).max(100),
       })
       .parse(d),
@@ -602,16 +602,13 @@ export const backfillImagensBling = createServerFn({ method: "POST" })
     await ensureStaff(context);
     const bling = await ensureBlingTokens(context);
 
-    const {
-      data: rows,
-      error,
-      count,
-    } = await context.supabase
+    let query = context.supabase
       .from("produtos")
       .select("id, sku", { count: "exact" })
       .is("imagem_url", null)
-      .order("sku")
-      .range(data.offset, data.offset + data.limit - 1);
+      .order("sku");
+    if (data.cursor) query = query.gt("sku", data.cursor);
+    const { data: rows, error, count } = await query.limit(data.limit);
 
     if (error) throw new Error(`Erro ao listar produtos: ${error.message}`);
 
@@ -659,7 +656,7 @@ export const backfillImagensBling = createServerFn({ method: "POST" })
       errors,
       processed: (rows ?? []).length,
       total: count ?? 0,
-      offset: data.offset,
+      nextCursor: rows && rows.length > 0 ? rows[rows.length - 1].sku : null,
     };
   });
 

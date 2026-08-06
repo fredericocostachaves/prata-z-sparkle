@@ -444,7 +444,7 @@ function ProdutosPage() {
     )
       return;
     const batchSize = 20;
-    let offset = 0;
+    let cursor: string | null = null;
     let updated = 0;
     let semImagem = 0;
     let errors = 0;
@@ -461,16 +461,16 @@ function ProdutosPage() {
     try {
       let total = 0;
       for (;;) {
-        const result = await backfillImgs({ data: { offset, limit: batchSize } });
-        total = result.total;
+        const result = await backfillImgs({ data: { cursor, limit: batchSize } });
+        if (total === 0) total = result.total;
         updated += result.updated;
         semImagem += result.semImagem;
         errors += result.errors;
-        offset += result.processed;
+        cursor = result.nextCursor;
         setProgress({
           phase: "importing",
           action: "import",
-          current: Math.min(offset, total),
+          current: Math.min(updated + semImagem + errors, total),
           total,
           imported: 0,
           skipped: 0,
