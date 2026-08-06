@@ -50,6 +50,22 @@ interface BlingTokenResponse {
 const TOKEN_URL = "https://www.bling.com.br/Api/v3/oauth/token";
 const BASE_URL = "https://www.bling.com.br/Api/v3";
 
+/** Diagnóstico da última chamada a getStockBalances (para depuração no console). */
+export let lastStockBalancesDiag:
+  | {
+      ids: number;
+      batchesOk: number;
+      batchesErr: number;
+      rawItens: number;
+      saldos: number;
+      requestedFound: number;
+      procurado: unknown;
+      procuradoTipo: string;
+      achouProcurado: boolean | undefined;
+      amostra: object | undefined;
+    }
+  | undefined;
+
 /**
  * Converte uma falha de renovação do token do Bling em uma mensagem legível
  * para o usuário, sem expor códigos de erro ou detalhes técnicos da API.
@@ -333,6 +349,9 @@ class BlingClient {
     const batchSize = 50;
     let batchOk = 0;
     let batchErr = 0;
+    let rawCount = 0;
+    let firstItem: unknown;
+    let requestedFound = 0;
     for (let i = 0; i < productIds.length; i += batchSize) {
       const batch = productIds.slice(i, i + batchSize);
       const params = batch.map((id) => `idsProdutos[]=${id}`).join("&");
@@ -341,12 +360,12 @@ class BlingClient {
           `/estoques/saldos?${params}`,
         );
         const arr = stockData.data ?? [];
-        if (i === 0 && arr.length > 0) {
-          console.warn("[Bling] Exemplo de saldo recebido:", JSON.stringify(arr[0]));
-        }
+        rawCount += arr.length;
+        if (firstItem === undefined && arr.length > 0) firstItem = arr[0];
         for (const s of arr) {
           const qty = s.saldoDisponivel ?? s.saldoFisicoTotal ?? 0;
           stockMap.set(s.idProduto, qty);
+          if (batch.includes(Number(s.idProduto))) requestedFound++;
         }
         batchOk++;
       } catch (err) {
@@ -355,6 +374,19 @@ class BlingClient {
       }
       if (i + batchSize < productIds.length) await this.sleep(300);
     }
+    const procurado = productIds[0];
+    lastStockBalancesDiag = {
+      ids: productIds.length,
+      batchesOk: batchOk,
+      batchesErr: batchErr,
+      rawItens: rawCount,
+      saldos: stockMap.size,
+      requestedFound,
+      procurado,
+      procuradoTipo: typeof procurado,
+      achouProcurado: procurado !== undefined ? stockMap.has(procurado) : undefined,
+      amostra: firstItem as object | undefined,
+    };
     console.warn(
       `[Bling] getStockBalances: batches ok=${batchOk}, erro=${batchErr}, saldos=${stockMap.size} de ${productIds.length} ids`,
     );

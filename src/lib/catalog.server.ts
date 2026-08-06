@@ -112,7 +112,14 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
     // "mapa em tempo real" (resultaria em tudo fora de estoque). Reporta como
     // indisponível para o chamador usar o saldo do banco.
     if (map.size > 0 && positives === 0) {
-      const detail = `saldos zerados (${stock.size} de ${produtos.length})`;
+      const mod = await import("./integrations/bling.server");
+      const diag = mod.lastStockBalancesDiag;
+      const detail = [
+        `saldos zerados (${stock.size} de ${produtos.length})`,
+        diag
+          ? `rawItens=${diag.rawItens} requestedFound=${diag.requestedFound} achouProcurado=${diag.achouProcurado} procuradoTipo=${diag.procuradoTipo} procurado=${String(diag.procurado)} amostra=${JSON.stringify(diag.amostra)}`
+          : "sem diag",
+      ].join(" | ");
       console.warn(`[Catálogo] Bling: todos os saldos vieram zerados — ${detail}`);
       return { map: null, reason: "bling_indisponivel", detail };
     }
