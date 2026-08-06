@@ -164,8 +164,10 @@ function CategoryPage() {
   useEffect(() => {
     if (data?.debug) {
       console.warn("[Catalogo] motivo do estoque indisponível:", data.debug);
+    } else if (data?.warning === "bling_indisponivel") {
+      console.warn("[Catalogo] Bling indisponível (sem detalhe no retorno)");
     }
-  }, [data?.debug]);
+  }, [data?.debug, data?.warning]);
 
   if (!cat) {
     return (

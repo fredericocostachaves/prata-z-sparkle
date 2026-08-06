@@ -195,6 +195,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       // Se o saldo "em tempo real" do Bling zerou tudo (SKUs divergentes, token de
       // outra conta etc.), não esvaziamos a vitrine: usamos o saldo do banco.
       let warning = bling.reason;
+      let debug = bling.detail;
       if (products.length === 0 && (rows ?? []).length > 0 && bling.map) {
         const dbOnly = (rows ?? [])
           .map((r) => ({ ...mapProduct(r), stock: r.estoque_atual ?? 0 }))
@@ -202,6 +203,9 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         if (dbOnly.length > 0) {
           products = dbOnly;
           warning = "bling_indisponivel";
+          debug =
+            debug ??
+            `mapa do Bling não tinha saldo para os produtos de "${data.slug}" (saldos do Bling vazios/zerados)`;
           console.warn(
             `[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças)`,
           );
@@ -212,7 +216,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         products,
         source: bling.map ? "bling" : "banco",
         warning,
-        debug: bling.detail,
+        debug,
       };
     } catch (err) {
       console.error(
