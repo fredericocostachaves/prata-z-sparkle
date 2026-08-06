@@ -13,7 +13,7 @@ import {
   type CatalogResult,
 } from "@/lib/catalog.types";
 import { SITE_URL, categoryJsonLd, breadcrumbJsonLd } from "@/lib/seo";
-import catFallback from "@/assets/cat-colar.jpg";
+import placeholderImage from "@/assets/produto-sem-imagem.svg";
 
 const EMPTY_RESULT: CatalogResult = {
   products: [],
@@ -96,7 +96,7 @@ function toProduct(p: CatalogProduct): Product {
     name: p.name,
     category: p.category as Product["category"],
     price: p.price,
-    images: images.length ? images : [catFallback],
+    images: images.length ? images : [placeholderImage],
     description: p.description ?? "",
     highlights: [],
     stock: p.stock,

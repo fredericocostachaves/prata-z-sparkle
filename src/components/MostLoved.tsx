@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import type { Product } from "@/data/products";
 
 import type { BestSellersResult, CatalogProduct } from "@/lib/catalog.types";
-import catFallback from "@/assets/cat-colar.jpg";
+import placeholderImage from "@/assets/produto-sem-imagem.svg";
 
 const routeApi = getRouteApi("/");
 
@@ -18,7 +18,7 @@ function toProduct(p: CatalogProduct): Product {
     name: p.name,
     category: p.category as Product["category"],
     price: p.price,
-    images: images.length ? images : [catFallback],
+    images: images.length ? images : [placeholderImage],
     description: p.description ?? "",
     highlights: [],
     stock: p.stock,

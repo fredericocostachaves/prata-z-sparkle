@@ -12,7 +12,7 @@ import { SITE_URL, productJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { stripHtml } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import catFallback from "@/assets/cat-colar.jpg";
+import placeholderImage from "@/assets/produto-sem-imagem.svg";
 
 const EMPTY_DETAIL: CatalogDetailResult = {
   product: null,
@@ -159,7 +159,7 @@ function ProductPage() {
 
   const product: Product | undefined = useMemo(() => {
     if (remote) {
-      const images = remote.gallery.length ? remote.gallery : [catFallback];
+      const images = remote.gallery.length ? remote.gallery : [placeholderImage];
       return {
         id: remote.id,
         slug,

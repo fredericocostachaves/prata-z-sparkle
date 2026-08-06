@@ -5,6 +5,7 @@ import { formatPrice } from "@/data/products";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
 import { useReveal } from "@/hooks/useScrollReveal";
+import placeholderImage from "@/assets/produto-sem-imagem.svg";
 
 interface Props {
   product: Product;
@@ -24,7 +25,7 @@ export function ProductCard({ product, index = 0 }: Props) {
 
         <Link to="/produto/$slug" params={{ slug: product.slug }} className="block h-full w-full">
           <img
-            src={product.images[0]}
+            src={product.images[0] ?? placeholderImage}
             alt={product.name}
             loading={index < 4 ? "eager" : "lazy"}
             fetchPriority={index === 0 ? "high" : index < 4 ? "auto" : "low"}
