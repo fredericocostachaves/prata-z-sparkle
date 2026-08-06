@@ -60,6 +60,28 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) && n !== 0 ? n : null;
 }
 
+/**
+ * Normaliza a URL de uma imagem para deduplicação "visual". O Bling e o banco
+ * costumam guardar a MESMA foto com URLs diferentes (interna/externa, com
+ * query de redimensionamento, http/https, trailing slash), então comparar
+ * string por string deixa duplicatas que parecem imagens iguais. Removemos a
+ * query string, o hash e normalizamos o esquema para detectar e eliminar essas
+ * repetições, mantendo a primeira ocorrência.
+ */
+function normalizeImageUrl(url: string): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    u.search = "";
+    u.hash = "";
+    let href = u.href;
+    if (href.endsWith("/")) href = href.slice(0, -1);
+    return href.replace(/^http:\/\//i, "https://");
+  } catch {
+    return url.split(/[?#]/)[0].replace(/\/+$/, "");
+  }
+}
+
 interface BlingDetailResult {
   name: string | null;
   code: string | null;
@@ -279,7 +301,16 @@ export const getProductDetail = createServerFn({ method: "GET" })
         ...live.images,
         ...(row.imagem_url ? [row.imagem_url] : []),
         ...(row.galeria_urls ?? []),
-      ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i) as string[];
+      ].filter((v) => Boolean(v)) as string[];
+
+      const seen = new Set<string>();
+      const uniqueGallery: string[] = [];
+      for (const img of gallery) {
+        const key = normalizeImageUrl(img);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        uniqueGallery.push(img);
+      }
 
       const attributes = [...live.attributes];
       const dims = live.dimensions ?? {
@@ -294,8 +325,8 @@ export const getProductDetail = createServerFn({ method: "GET" })
         name: formatProductTitle(live.code ?? row.sku, live.name ?? row.nome),
         price: (live.price ?? Number(row.preco_venda)) || 0,
         stock: live.stock ?? row.estoque_atual ?? 0,
-        image: gallery[0] ?? null,
-        gallery,
+        image: uniqueGallery[0] ?? null,
+        gallery: uniqueGallery,
         description: live.description ?? row.descricao ?? null,
         descriptionLong: live.descriptionLong ?? live.description ?? row.descricao ?? null,
         descriptionShort: live.descriptionShort ?? row.descricao ?? null,

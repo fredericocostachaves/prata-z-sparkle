@@ -189,11 +189,17 @@ function num(v: unknown): number | null {
  */
 export function extractBlingImages(midia: any): string[] {
   const out: string[] = [];
+  const seen = new Set<string>();
   const pushUrl = (v: unknown) => {
     const url = (v as any)?.link ?? (v as any)?.url ?? (typeof v === "string" ? v : null);
-    if (url && typeof url === "string" && url.trim() && !out.includes(url.trim())) {
-      out.push(url.trim());
-    }
+    if (!url || typeof url !== "string" || !url.trim()) return;
+    const trimmed = url.trim();
+    // Normaliza a URL para não duplicar a MESMA foto em formatos/URLs
+    // diferentes (interna/externa, imagensURL/capasURL, query de tamanho).
+    const key = normalizeImageUrl(trimmed);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(trimmed);
   };
   const pushArray = (list: unknown) => {
     if (Array.isArray(list)) for (const it of list) pushUrl(it);
@@ -210,6 +216,25 @@ export function extractBlingImages(midia: any): string[] {
     pushArray(imagens?.imagens);
   }
   return out;
+}
+
+/**
+ * Normaliza a URL de uma imagem para deduplicação "visual": remove query string
+ * e hash, normaliza http->https e trailing slash. Assim a mesma foto guardada
+ * com URLs diferentes não é exibida mais de uma vez.
+ */
+function normalizeImageUrl(url: string): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    u.search = "";
+    u.hash = "";
+    let href = u.href;
+    if (href.endsWith("/")) href = href.slice(0, -1);
+    return href.replace(/^http:\/\//i, "https://");
+  } catch {
+    return url.split(/[?#]/)[0].replace(/\/+$/, "");
+  }
 }
 
 /**
