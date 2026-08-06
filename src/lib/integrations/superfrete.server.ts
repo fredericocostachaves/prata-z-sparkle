@@ -47,7 +47,7 @@ class SuperFreteClient {
   private userAgent: string;
 
   constructor() {
-    this.token = process.env.SUPERFRETE_TOKEN || '';
+    this.token = (process.env.SUPERFRETE_TOKEN || '').replace(/^"|"$/g, '').trim();
     const isProduction = process.env.NODE_ENV === 'production';
     this.baseUrl = isProduction
       ? 'https://api.superfrete.com'
@@ -109,8 +109,9 @@ class SuperFreteClient {
 
       return Array.isArray(data) ? data.filter((opt) => !opt.error) : [];
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Erro ao calcular frete com Super Frete:', error);
-      return [];
+      throw new Error(`Não foi possível calcular o frete: ${message}`);
     }
   }
 
