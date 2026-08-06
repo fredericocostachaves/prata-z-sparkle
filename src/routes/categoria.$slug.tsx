@@ -1,16 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { categories, getCategory, getProductsByCategory, type Product } from "@/data/products";
 import { listCategoryProducts } from "@/lib/catalog.functions";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogCategorySlug, type CatalogResult } from "@/lib/catalog.types";
+import {
+  CATEGORY_SLUGS,
+  type CatalogProduct,
+  type CatalogCategorySlug,
+  type CatalogResult,
+} from "@/lib/catalog.types";
 import { SITE_URL, categoryJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import catFallback from "@/assets/cat-colar.jpg";
 
-const EMPTY_RESULT: CatalogResult = { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+const EMPTY_RESULT: CatalogResult = {
+  products: [],
+  source: "fallback",
+  warning: "catalogo_indisponivel",
+};
 
 export const Route = createFileRoute("/categoria/$slug")({
   loader: async ({ params }): Promise<CatalogResult> => {
@@ -73,11 +82,13 @@ export const Route = createFileRoute("/categoria/$slug")({
   component: CategoryPage,
 });
 
-
 type Sort = "destaques" | "menor" | "maior" | "novos";
 
 function toProduct(p: CatalogProduct): Product {
-  const slug = `${p.sku}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const slug = `${p.sku}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   const images = [p.image, ...(p.gallery ?? [])].filter(Boolean) as string[];
   return {
     id: p.id,
@@ -124,18 +135,14 @@ function CategoryPage() {
     gcTime: 0,
   });
 
-
   const remote = data?.products ?? [];
   // Fallback: se a integração falhar, demorar muito ou não houver retorno, mostramos o catálogo local
-  const useFallback =
-    isError || data?.source === "fallback" || (!isPending && remote.length === 0);
+  const useFallback = isError || data?.source === "fallback" || (!isPending && remote.length === 0);
 
   const fallbackProducts = useMemo(() => getProductsByCategory(slug), [slug]);
 
   const list = useMemo(() => {
-    const arr: Product[] = useFallback
-      ? fallbackProducts
-      : remote.map(toProduct);
+    const arr: Product[] = useFallback ? fallbackProducts : remote.map(toProduct);
     const sorted = [...arr];
     if (sort === "menor") sorted.sort((a, b) => a.price - b.price);
     if (sort === "maior") sorted.sort((a, b) => b.price - a.price);
@@ -154,12 +161,21 @@ function CategoryPage() {
             ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
             : null;
 
+  useEffect(() => {
+    if (data?.debug) {
+      console.warn("[Catalogo] motivo do estoque indisponível:", data.debug);
+    }
+  }, [data?.debug]);
+
   if (!cat) {
     return (
       <PageShell eyebrow="Catálogo" title="Categoria não encontrada">
         <div className="mx-auto max-w-3xl px-6 py-16 text-center">
           <p className="text-muted-foreground">Esta categoria não existe.</p>
-          <Link to="/" className="mt-6 inline-block story-link text-[12px] tracking-[0.3em] uppercase">
+          <Link
+            to="/"
+            className="mt-6 inline-block story-link text-[12px] tracking-[0.3em] uppercase"
+          >
             Voltar para a home
           </Link>
         </div>
@@ -216,7 +232,6 @@ function CategoryPage() {
             ))}
           </div>
         )}
-
 
         {/* Other categories */}
         <div className="mt-24 border-t border-border pt-12">

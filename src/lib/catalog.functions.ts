@@ -39,14 +39,19 @@ async function getCatalogDb() {
 async function fetchBlingStock(): Promise<{
   map: Map<string, number> | null;
   reason: CatalogWarning;
+  detail?: string;
 }> {
   try {
     const { getBlingStockBySku } = await import("./catalog.server");
     const res = await getBlingStockBySku();
-    return { map: res.map, reason: res.reason };
+    return { map: res.map, reason: res.reason, detail: res.detail };
   } catch (err) {
     console.warn("[Catalogo] Estoque Bling indisponível:", err);
-    return { map: null, reason: "bling_indisponivel" };
+    return {
+      map: null,
+      reason: "bling_indisponivel",
+      detail: err instanceof Error ? err.message : "fetchBlingStock lançou",
+    };
   }
 }
 
@@ -207,6 +212,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         products,
         source: bling.map ? "bling" : "banco",
         warning,
+        debug: bling.detail,
       };
     } catch (err) {
       console.error(
