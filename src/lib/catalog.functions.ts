@@ -138,6 +138,11 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       // busca por palavra-chave no NOME para não deixar a vitrine vazia. A descrição
       // não entra aqui porque ela costuma citar outras categorias ("combine com
       // brincos e pulseiras"), o que poluiria o resultado.
+      //
+      // IMPORTANTE: descartamos no final qualquer produto que JÁ tenha categoria
+      // preenchida. As palavras-chave são genéricas demais ("cuidados", "limpeza",
+      // "polimento") e sem esse descarte itens já classificados em outra categoria
+      // (ex.: 'colares') acabariam vazando para esta página no fallback.
       if ((rows?.length ?? 0) === 0) {
         const keywords = categorySearchKeywords(data.slug);
         if (keywords.length) {
@@ -157,9 +162,9 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
               res.error.message,
             );
           } else {
-            rows = res.data;
+            rows = (res.data ?? []).filter((r) => !(r.categoria ?? "").trim());
             console.log(
-              `[Catalogo] Categoria "${data.slug}" vazia; palavra-chave encontrou ${res.data?.length ?? 0} produto(s)`,
+              `[Catalogo] Categoria "${data.slug}" vazia; palavra-chave encontrou ${res.data?.length ?? 0} produto(s), mantidos ${rows.length} sem categoria`,
             );
           }
         }
