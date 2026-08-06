@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { CATEGORY_SLUGS, categorizeProduct, type CatalogCategorySlug } from "./catalog.types";
+import { categorizeProduct } from "./catalog.types";
 
 async function ensureStaff(context: { supabase: any; userId: string }) {
   const { data: roles } = await (context.supabase as any)
@@ -543,9 +543,13 @@ export const countProdutosCadastrados = createServerFn({ method: "GET" })
   });
 
 /**
- * Classifica automaticamente todos os produtos que ainda estão sem categoria,
- * usando o nome/descrição. Também corrige produtos classificados em categoria
- * inválida. Devolve quantos foram atualizados.
+ * Classifica automaticamente a categoria de todos os produtos usando o
+ * nome/descrição (classificador por posição, mais preciso que o ILIKE antigo —
+ * ex.: "Anel de Prata 925 - Mini argola..." é Anel, não Brinco). Preenche os
+ * que estão sem categoria, corrige categoria inválida e também ajusta produtos
+ * cuja categoria atual diverge da calculada (casos desclassificados por
+ * migrations anteriores que checavam "argola" antes de "anel"). Devolve
+ * quantos foram atualizados.
  */
 export const backfillCategorias = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -564,12 +568,7 @@ export const backfillCategorias = createServerFn({ method: "POST" })
     for (const r of rows ?? []) {
       const cat = categorizeProduct(r.nome, r.descricao);
       const current = (r.categoria ?? "").trim();
-      const needsUpdate =
-        !current && cat
-          ? true
-          : current && !(CATEGORY_SLUGS as readonly string[]).includes(current) && cat
-            ? true
-            : false;
+      const needsUpdate: boolean = cat ? cat !== current : false;
 
       if (needsUpdate) {
         const { error: updErr } = await context.supabase
