@@ -183,6 +183,36 @@ function num(v: unknown): number | null {
 }
 
 /**
+ * Extrai URLs de imagens de um objeto `midia` do Bling. O Bling devolve as
+ * imagens em formatos diferentes conforme o endpoint/versão (internas/externas,
+ * imagensURL, capasURL ou um array direto), então lê de todos.
+ */
+export function extractBlingImages(midia: any): string[] {
+  const out: string[] = [];
+  const pushUrl = (v: unknown) => {
+    const url = (v as any)?.link ?? (v as any)?.url ?? (typeof v === "string" ? v : null);
+    if (url && typeof url === "string" && url.trim() && !out.includes(url.trim())) {
+      out.push(url.trim());
+    }
+  };
+  const pushArray = (list: unknown) => {
+    if (Array.isArray(list)) for (const it of list) pushUrl(it);
+  };
+
+  const imagens = midia?.imagens;
+  if (Array.isArray(imagens)) {
+    pushArray(imagens);
+  } else {
+    pushArray(imagens?.internas);
+    pushArray(imagens?.externas);
+    pushArray(imagens?.imagensURL);
+    pushArray(imagens?.capasURL);
+    pushArray(imagens?.imagens);
+  }
+  return out;
+}
+
+/**
  * Detalhe em tempo real de um produto no Bling, buscado pelo SKU (código).
  * Nunca lança: em caso de falha devolve o motivo para o chamador usar o banco.
  */
@@ -205,14 +235,7 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
       (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
     const stockMap = await bling.getStockBalances([found.id]);
 
-    const images: string[] = [];
-    const midia = full?.midia?.imagens;
-    for (const group of [midia?.internas, midia?.externas]) {
-      for (const img of group ?? []) {
-        const url = img?.link ?? img?.url;
-        if (url) images.push(url);
-      }
-    }
+    const images = extractBlingImages(full?.midia);
 
     const attributes: { label: string; value: string }[] = [];
     const push = (label: string, value: unknown) => {

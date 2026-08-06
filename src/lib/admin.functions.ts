@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { categorizeProduct } from "./catalog.types";
+import { extractBlingImages } from "./catalog.server";
 
 async function ensureStaff(context: { supabase: any; userId: string }) {
   const { data: roles } = await (context.supabase as any)
@@ -463,14 +464,7 @@ export const importBlingBatch = createServerFn({ method: "POST" })
 
       const estoque = stockMap.get(bp.id) ?? 0;
 
-      const images: string[] = [];
-      const mi = bp.midia?.imagens;
-      for (const group of [mi?.internas, mi?.externas]) {
-        for (const img of group ?? []) {
-          const url = img?.link ?? img?.url;
-          if (url && !images.includes(url)) images.push(url);
-        }
-      }
+      const images = extractBlingImages(bp.midia);
       const galeria_urls = images;
       const imagem_url = images[0] ?? null;
       const descricao =
