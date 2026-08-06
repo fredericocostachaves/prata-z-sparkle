@@ -8,6 +8,7 @@ const TTL = 5 * 60 * 1000;
 export interface BlingStockResult {
   map: Map<string, number> | null;
   reason: CatalogWarning;
+  detail?: string;
 }
 
 /**
@@ -22,13 +23,13 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
   // OAuth 2.0: sem client id/secret não há como obter nem renovar o access token.
   if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
     console.warn("[Catálogo] Credenciais do Bling não configuradas — usando estoque do banco.");
-    return { map: null, reason: "bling_nao_configurado" };
+    return { map: null, reason: "bling_nao_configurado", detail: "sem BLING_CLIENT_ID/SECRET" };
   }
 
   try {
     await bling.loadFromDb();
     if (!bling.hasTokens) {
-      return { map: null, reason: "bling_nao_configurado" };
+      return { map: null, reason: "bling_nao_configurado", detail: "sem tokens no bling_tokens" };
     }
     if (bling.isExpired) {
       await bling.refreshTokens();
@@ -36,7 +37,13 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
 
     const produtos = await bling.listAllProducts();
     console.warn(`[Catálogo] Bling: ${produtos.length} produto(s) listados`);
-    if (!produtos.length) return { map: null, reason: "bling_indisponivel" };
+    if (!produtos.length) {
+      return {
+        map: null,
+        reason: "bling_indisponivel",
+        detail: "listAllProducts retornou 0 produtos",
+      };
+    }
 
     const stock = await bling.getStockBalances(produtos.map((p) => p.id));
     const positives = [...stock.values()].filter((n) => n > 0).length;
@@ -55,20 +62,17 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
     // "mapa em tempo real" (resultaria em tudo fora de estoque). Reporta como
     // indisponível para o chamador usar o saldo do banco.
     if (map.size > 0 && positives === 0) {
-      console.warn(
-        "[Catálogo] Bling: todos os saldos vieram zerados — tratando como indisponível (usando banco)",
-      );
-      return { map: null, reason: "bling_indisponivel" };
+      const detail = `saldos zerados (${stock.size} de ${produtos.length})`;
+      console.warn(`[Catálogo] Bling: todos os saldos vieram zerados — ${detail}`);
+      return { map: null, reason: "bling_indisponivel", detail };
     }
 
     cache = { at: Date.now(), map };
     return { map, reason: null };
   } catch (err) {
-    console.warn(
-      "[Catálogo] Estoque do Bling indisponível, usando banco:",
-      err instanceof Error ? err.message : err,
-    );
-    return { map: null, reason: "bling_indisponivel" };
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[Catálogo] Estoque do Bling indisponível, usando banco:", msg);
+    return { map: null, reason: "bling_indisponivel", detail: msg };
   }
 }
 

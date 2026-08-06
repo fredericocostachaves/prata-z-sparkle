@@ -36,6 +36,8 @@ export interface CatalogResult {
   /** origem do saldo exibido */
   source: "bling" | "banco" | "fallback";
   warning: CatalogWarning;
+  /** detalhe interno de diagnóstico (ex.: motivo do fallback do estoque) */
+  debug?: string;
 }
 
 export interface CatalogProductDetail extends CatalogProduct {
