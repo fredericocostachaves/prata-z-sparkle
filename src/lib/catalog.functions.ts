@@ -209,7 +209,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
           const sampleMapKeys = [...bling.map!.keys()].slice(0, 5);
           const sampleDbSkus = dbSkus.slice(0, 5);
           const zeroEs = (rows ?? []).filter((r) => (r.estoque_atual ?? 0) <= 0).length;
-          debug = [
+          const guardDebug = [
             `mapa do Bling sem saldo p/ "${data.slug}"`,
             `SKUs na cat: ${dbSkus.length}`,
             `presentes no mapa: ${matched.length}`,
@@ -218,6 +218,7 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
             `ex. mapa: [${sampleMapKeys.join(", ")}]`,
             `ex. DB: [${sampleDbSkus.join(", ")}]`,
           ].join(" | ");
+          debug = debug ? `${guardDebug} || fetch: ${debug}` : guardDebug;
           console.warn(
             `[Catalogo] Bling zerou o estoque de "${data.slug}"; usando saldo do banco (${dbOnly.length} peças) — ${debug}`,
           );
