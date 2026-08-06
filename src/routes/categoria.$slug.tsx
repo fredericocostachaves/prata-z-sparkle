@@ -155,19 +155,18 @@ function CategoryPage() {
       ? "Não foi possível conectar ao catálogo agora. Exibindo peças de exemplo enquanto normalizamos a integração."
       : data?.warning === "bling_nao_configurado"
         ? "Integração com o Bling ainda não configurada — os saldos exibidos são os do nosso banco de dados."
-        : data?.warning === "bling_indisponivel"
-          ? "Estoque em tempo real do Bling temporariamente indisponível — exibindo os saldos do nosso banco de dados."
-          : !isPending && remote.length === 0 && fallbackProducts.length > 0
-            ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
-            : null;
+        : !isPending && remote.length === 0 && fallbackProducts.length > 0
+          ? "Catálogo online indisponível no momento. Exibindo peças de exemplo."
+          : null;
 
   useEffect(() => {
-    if (data?.debug) {
-      console.warn("[Catalogo] motivo do estoque indisponível:", data.debug);
-    } else if (data?.warning === "bling_indisponivel") {
-      console.warn("[Catalogo] Bling indisponível (sem detalhe no retorno)");
+    if (data?.warning === "bling_indisponivel") {
+      console.warn(
+        "[Catalogo] Bling indisponível/zerado; usando saldo do banco:",
+        data?.debug ?? "",
+      );
     }
-  }, [data?.debug, data?.warning]);
+  }, [data?.warning, data?.debug]);
 
   if (!cat) {
     return (
