@@ -1,14 +1,55 @@
 import { bling } from "./integrations/bling.server";
 import type { CatalogWarning } from "./catalog.types";
 
-// Cache do mapa de estoque do Bling (SKU -> quantidade disponível)
+// Cache do mapa de estoque do Bling (SKU -> quantidade disponível).
+// Há dois níveis: um em memória (por isolate) e um no banco (compartilhado
+// entre todos os isolates). O do banco evita que cada isolate puxe o catálogo
+// inteiro do Bling a cada refresh — o que estourava o rate-limit e fazia o
+// saldo real-time vir sempre zerado.
 let cache: { at: number; map: Map<string, number> } | null = null;
-const TTL = 5 * 60 * 1000;
+const TTL = 10 * 60 * 1000;
 
 export interface BlingStockResult {
   map: Map<string, number> | null;
   reason: CatalogWarning;
   detail?: string;
+}
+
+/** Lê o mapa de estoque em cache no banco (row única). */
+async function readCacheFromDb(): Promise<{ at: number; map: Map<string, number> } | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any)
+      .from("bling_estoque_cache")
+      .select("mapa, atualizado_em")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data?.mapa) return null;
+    const entries = Object.entries(data.mapa as Record<string, number>);
+    return {
+      at: new Date(data.atualizado_em).getTime(),
+      map: new Map(entries as [string, number][]),
+    };
+  } catch (err) {
+    console.warn("[Catálogo] Falha ao ler cache de estoque do banco:", err);
+    return null;
+  }
+}
+
+/** Grava o mapa de estoque no banco (row única). */
+async function writeCacheToDb(map: Map<string, number>) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const objeto = Object.fromEntries(map.entries());
+    await (supabaseAdmin as any)
+      .from("bling_estoque_cache")
+      .upsert(
+        { id: 1, mapa: objeto, atualizado_em: new Date().toISOString() },
+        { onConflict: "id" },
+      );
+  } catch (err) {
+    console.warn("[Catálogo] Falha ao gravar cache de estoque no banco:", err);
+  }
 }
 
 /**
@@ -24,6 +65,15 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
   if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
     console.warn("[Catálogo] Credenciais do Bling não configuradas — usando estoque do banco.");
     return { map: null, reason: "bling_nao_configurado", detail: "sem BLING_CLIENT_ID/SECRET" };
+  }
+
+  // Cache compartilhado no banco: todos os isolates usam o MESMO mapa, então a
+  // API do Bling é chamada só quando o cache expira (1x a cada TTL), não por
+  // isolate. Se houver um valor fresco, devolve sem tocar no Bling.
+  const dbCache = await readCacheFromDb();
+  if (dbCache && Date.now() - dbCache.at < TTL) {
+    cache = dbCache;
+    return { map: dbCache.map, reason: null };
   }
 
   try {
@@ -68,10 +118,16 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
     }
 
     cache = { at: Date.now(), map };
+    await writeCacheToDb(map);
     return { map, reason: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("[Catálogo] Estoque do Bling indisponível, usando banco:", msg);
+    // Se houver um cache anterior (mesmo velho), serve ele em vez de esvaziar a vitrine.
+    if (dbCache) {
+      cache = dbCache;
+      return { map: dbCache.map, reason: null };
+    }
     return { map: null, reason: "bling_indisponivel", detail: msg };
   }
 }
