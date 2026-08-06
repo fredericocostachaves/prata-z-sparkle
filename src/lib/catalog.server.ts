@@ -105,7 +105,9 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
     for (const p of produtos) {
       const sku = (p.codigo || String(p.id)).trim();
       if (!sku) continue;
-      map.set(sku, stock.get(p.id) ?? 0);
+      // Casa por SKU (string) primeiro — sabemos que bate com o banco — e por id
+      // como fallback, para não depender do tipo/conteúdo do idProduto.
+      map.set(sku, stock.get(sku) ?? stock.get(p.id) ?? 0);
     }
 
     // Se o endpoint de saldos devolveu vazio/zerado, não vale a pena usar este

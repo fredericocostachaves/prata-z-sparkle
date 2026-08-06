@@ -342,8 +342,8 @@ class BlingClient {
     }
   }
 
-  async getStockBalances(productIds: number[]): Promise<Map<number, number>> {
-    const stockMap = new Map<number, number>();
+  async getStockBalances(productIds: number[]): Promise<Map<number | string, number>> {
+    const stockMap = new Map<number | string, number>();
     if (productIds.length === 0) return stockMap;
 
     const batchSize = 50;
@@ -364,7 +364,12 @@ class BlingClient {
         if (firstItem === undefined && arr.length > 0) firstItem = arr[0];
         for (const s of arr) {
           const qty = s.saldoDisponivel ?? s.saldoFisicoTotal ?? 0;
+          // Chave por idProduto e também por codigo (string): a busca no
+          // catálogo casa por SKU, que é o que sabemos que bate de verdade.
           stockMap.set(s.idProduto, qty);
+          if (s.codigo !== undefined && s.codigo !== null && String(s.codigo).trim() !== "") {
+            stockMap.set(String(s.codigo).trim(), qty);
+          }
           if (batch.includes(Number(s.idProduto))) requestedFound++;
         }
         batchOk++;
