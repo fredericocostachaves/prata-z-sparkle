@@ -235,6 +235,10 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
         // chamadas ao Bling e disparar tudo de uma vez estoura o rate limit (~3
         // req/s), fazendo a API devolver 429 e a maioria das imagens continuar
         // sem resolução — o problema "algumas aparecem, outras não".
+        //
+        // SEMPRE que uma imagem é resolvida, gravamos no banco (imagem_url /
+        // galeria_urls). Assim a resolução fica durável: a próxima leitura volta
+        // direto do banco, sem depender do Bling nem do rate limit.
         const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
         let resolved = 0;
         for (const p of missingImgs) {
@@ -242,9 +246,17 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
             const detail = await fetchBlingDetail(String(p.sku).trim());
             if (detail?.images?.length) {
               p.image = detail.images[0];
-              const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
-              if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
+              const gallery = detail.images.slice(1);
+              if (gallery.length) p.gallery = [...(p.gallery ?? []), ...gallery];
               resolved++;
+              try {
+                await supabase
+                  .from("produtos")
+                  .update({ imagem_url: p.image, galeria_urls: gallery })
+                  .eq("id", p.id);
+              } catch (err) {
+                console.warn(`[Catalogo] Falha ao gravar imagem de ${p.sku} no banco:`, err);
+              }
             }
           } catch {
             // imagem não resolvida: segue para o próximo produto
