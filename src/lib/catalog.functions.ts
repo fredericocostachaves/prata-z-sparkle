@@ -219,6 +219,35 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
 
       let products: CatalogProduct[] = (rows ?? []).map(mapProduct).filter((p) => p.stock >= 1);
 
+      // Produtos sem imagem no banco (ex.: importados antes do backfill de fotos)
+      // podem ter a foto disponível no Bling — a página de detalhe já a resolve ao
+      // vivo. Buscamos a capa no Bling aqui para a listagem da categoria não exibir
+      // o "sem imagem" indevidamente (o produto tem foto, só não está no banco).
+      const missingImgs = products.filter((p) => {
+        const hasImage = [p.image, ...(p.gallery ?? [])].some(
+          (v) => typeof v === "string" && v.trim().length > 0,
+        );
+        return !hasImage && Boolean(p.sku);
+      });
+
+      if (missingImgs.length > 0) {
+        const results = await Promise.allSettled(
+          missingImgs.map(async (p) => {
+            const detail = await fetchBlingDetail(String(p.sku).trim());
+            if (!detail?.images?.length) return;
+            p.image = detail.images[0];
+            const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
+            if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
+          }),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed) {
+          console.warn(
+            `[Catalogo] Categoria "${data.slug}": ${failed} imagem(ns) não resolvidas no Bling`,
+          );
+        }
+      }
+
       // Se o saldo "em tempo real" do Bling zerou tudo (SKUs divergentes, token de
       // outra conta etc.), não esvaziamos a vitrine: usamos o saldo do banco.
       let warning = bling.reason;
@@ -449,9 +478,7 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
             const detail = await fetchBlingDetail(String(p.sku).trim());
             if (!detail?.images?.length) return;
             p.image = detail.images[0];
-            const extras = detail.images.slice(1).filter(
-              (u) => !(p.gallery ?? []).includes(u),
-            );
+            const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
             if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
           }),
         );
