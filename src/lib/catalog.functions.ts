@@ -231,19 +231,29 @@ export const listCategoryProducts = createServerFn({ method: "GET" })
       });
 
       if (missingImgs.length > 0) {
-        const results = await Promise.allSettled(
-          missingImgs.map(async (p) => {
+        // Buscamos as capas SEQUENCIALMENTE (não em paralelo): cada uma faz 2-3
+        // chamadas ao Bling e disparar tudo de uma vez estoura o rate limit (~3
+        // req/s), fazendo a API devolver 429 e a maioria das imagens continuar
+        // sem resolução — o problema "algumas aparecem, outras não".
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        let resolved = 0;
+        for (const p of missingImgs) {
+          try {
             const detail = await fetchBlingDetail(String(p.sku).trim());
-            if (!detail?.images?.length) return;
-            p.image = detail.images[0];
-            const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
-            if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
-          }),
-        );
-        const failed = results.filter((r) => r.status === "rejected").length;
-        if (failed) {
+            if (detail?.images?.length) {
+              p.image = detail.images[0];
+              const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
+              if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
+              resolved++;
+            }
+          } catch {
+            // imagem não resolvida: segue para o próximo produto
+          }
+          await sleep(350);
+        }
+        if (resolved < missingImgs.length) {
           console.warn(
-            `[Catalogo] Categoria "${data.slug}": ${failed} imagem(ns) não resolvidas no Bling`,
+            `[Catalogo] Categoria "${data.slug}": ${missingImgs.length - resolved} de ${missingImgs.length} imagem(ns) não resolvidas no Bling`,
           );
         }
       }
@@ -473,18 +483,27 @@ export const listBestSellersByCategory = createServerFn({ method: "GET" }).handl
       }
 
       if (missingImgs.length > 0) {
-        const results = await Promise.allSettled(
-          missingImgs.map(async (p) => {
+        // Sequencial (e não em paralelo) para não estourar o rate limit do Bling.
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        let resolved = 0;
+        for (const p of missingImgs) {
+          try {
             const detail = await fetchBlingDetail(String(p.sku).trim());
-            if (!detail?.images?.length) return;
-            p.image = detail.images[0];
-            const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
-            if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
-          }),
-        );
-        const failed = results.filter((r) => r.status === "rejected").length;
-        if (failed) {
-          console.warn(`[Catalogo] Best sellers: ${failed} imagem(ns) não resolvidas no Bling`);
+            if (detail?.images?.length) {
+              p.image = detail.images[0];
+              const extras = detail.images.slice(1).filter((u) => !(p.gallery ?? []).includes(u));
+              if (extras.length) p.gallery = [...(p.gallery ?? []), ...extras];
+              resolved++;
+            }
+          } catch {
+            // imagem não resolvida: segue para o próximo produto
+          }
+          await sleep(350);
+        }
+        if (resolved < missingImgs.length) {
+          console.warn(
+            `[Catalogo] Best sellers: ${missingImgs.length - resolved} de ${missingImgs.length} imagem(ns) não resolvidas no Bling`,
+          );
         }
       }
 
