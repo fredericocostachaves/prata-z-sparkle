@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { CookieConsent } from "@/components/CookieConsent";
+import { AuthOAuthCallback } from "@/components/AuthOAuthCallback";
 
 import appCss from "../styles.css?url";
 
@@ -48,10 +49,26 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Prata Z Joias — Alta joalheria em prata 925" },
       { name: "twitter:title", content: "Prata Z Joias — Alta joalheria em prata 925" },
-      { property: "og:description", content: "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil." },
-      { name: "twitter:description", content: "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/43a28d73-e3c6-464f-9cb7-c90806b20d15/id-preview-1ba1f7eb--8b8acf3d-3f30-4757-b150-c8cddd5d8c31.lovable.app-1784659906237.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/43a28d73-e3c6-464f-9cb7-c90806b20d15/id-preview-1ba1f7eb--8b8acf3d-3f30-4757-b150-c8cddd5d8c31.lovable.app-1784659906237.png" },
+      {
+        property: "og:description",
+        content:
+          "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Alta joalheria em prata 925 com atendimento personalizado de joias. Anéis, brincos, colares e pulseiras com garantia de autenticidade e envio para todo o Brasil.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/43a28d73-e3c6-464f-9cb7-c90806b20d15/id-preview-1ba1f7eb--8b8acf3d-3f30-4757-b150-c8cddd5d8c31.lovable.app-1784659906237.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/43a28d73-e3c6-464f-9cb7-c90806b20d15/id-preview-1ba1f7eb--8b8acf3d-3f30-4757-b150-c8cddd5d8c31.lovable.app-1784659906237.png",
+      },
       { property: "og:type", content: "website" },
     ],
     links: [
@@ -88,6 +105,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <FavoritesProvider>
+          <AuthOAuthCallback />
           <Outlet />
           <Toaster />
           <CookieConsent />
