@@ -35,8 +35,7 @@ const slides = [
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
-import showroom from "@/assets/showroom.jpg";
-const images = [hero1, hero2, hero3, showroom];
+const images = [hero1, hero2, hero3, hero1];
 
 export function HeroBanner() {
   const [i, setI] = useState(0);

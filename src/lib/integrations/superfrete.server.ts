@@ -47,10 +47,12 @@ class SuperFreteClient {
   private userAgent: string;
 
   constructor() {
-    this.token = (process.env.SUPERFRETE_TOKEN || '').replace(/^"|"$/g, '').trim();
-    // SUPERFRETE_BASE_URL tem prioridade, depois infere pelo ambiente.
-    this.baseUrl = (process.env.SUPERFRETE_BASE_URL || '').replace(/\/+$/, '').trim();
-    this.userAgent = "PrataZ Joias v1.0 (contato@pratazjoias.com.br)";
+    this.token = process.env.SUPERFRETE_TOKEN || '';
+    const isProduction = process.env.NODE_ENV === 'production';
+    this.baseUrl = isProduction
+      ? 'https://api.superfrete.com'
+      : 'https://sandbox.superfrete.com';
+    this.userAgent = 'PrataZ Joias v1.0 (contato@pratazjoias.com.br)';
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -107,9 +109,8 @@ class SuperFreteClient {
 
       return Array.isArray(data) ? data.filter((opt) => !opt.error) : [];
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
       console.error('Erro ao calcular frete com Super Frete:', error);
-      throw new Error(`Não foi possível calcular o frete: ${message}`);
+      return [];
     }
   }
 

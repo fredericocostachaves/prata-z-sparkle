@@ -1,55 +1,13 @@
 import { bling } from "./integrations/bling.server";
 import type { CatalogWarning } from "./catalog.types";
 
-// Cache do mapa de estoque do Bling (SKU -> quantidade disponível).
-// Há dois níveis: um em memória (por isolate) e um no banco (compartilhado
-// entre todos os isolates). O do banco evita que cada isolate puxe o catálogo
-// inteiro do Bling a cada refresh — o que estourava o rate-limit e fazia o
-// saldo real-time vir sempre zerado.
+// Cache do mapa de estoque do Bling (SKU -> quantidade disponível)
 let cache: { at: number; map: Map<string, number> } | null = null;
-const TTL = 10 * 60 * 1000;
+const TTL = 5 * 60 * 1000;
 
 export interface BlingStockResult {
   map: Map<string, number> | null;
   reason: CatalogWarning;
-  detail?: string;
-}
-
-/** Lê o mapa de estoque em cache no banco (row única). */
-async function readCacheFromDb(): Promise<{ at: number; map: Map<string, number> } | null> {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await (supabaseAdmin as any)
-      .from("bling_estoque_cache")
-      .select("mapa, atualizado_em")
-      .eq("id", 1)
-      .maybeSingle();
-    if (error || !data?.mapa) return null;
-    const entries = Object.entries(data.mapa as Record<string, number>);
-    return {
-      at: new Date(data.atualizado_em).getTime(),
-      map: new Map(entries as [string, number][]),
-    };
-  } catch (err) {
-    console.warn("[Catálogo] Falha ao ler cache de estoque do banco:", err);
-    return null;
-  }
-}
-
-/** Grava o mapa de estoque no banco (row única). */
-async function writeCacheToDb(map: Map<string, number>) {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const objeto = Object.fromEntries(map.entries());
-    await (supabaseAdmin as any)
-      .from("bling_estoque_cache")
-      .upsert(
-        { id: 1, mapa: objeto, atualizado_em: new Date().toISOString() },
-        { onConflict: "id" },
-      );
-  } catch (err) {
-    console.warn("[Catálogo] Falha ao gravar cache de estoque no banco:", err);
-  }
 }
 
 /**
@@ -64,92 +22,42 @@ export async function getBlingStockBySku(): Promise<BlingStockResult> {
   // OAuth 2.0: sem client id/secret não há como obter nem renovar o access token.
   if (!process.env.BLING_CLIENT_ID || !process.env.BLING_CLIENT_SECRET) {
     console.warn("[Catálogo] Credenciais do Bling não configuradas — usando estoque do banco.");
-    return { map: null, reason: "bling_nao_configurado", detail: "sem BLING_CLIENT_ID/SECRET" };
-  }
-
-  // Cache compartilhado no banco: todos os isolates usam o MESMO mapa, então a
-  // API do Bling é chamada só quando o cache expira (1x a cada TTL), não por
-  // isolate. Se houver um valor fresco, devolve sem tocar no Bling.
-  const dbCache = await readCacheFromDb();
-  if (dbCache && Date.now() - dbCache.at < TTL) {
-    cache = dbCache;
-    return { map: dbCache.map, reason: null };
+    return { map: null, reason: "bling_nao_configurado" };
   }
 
   try {
     await bling.loadFromDb();
     if (!bling.hasTokens) {
-      return { map: null, reason: "bling_nao_configurado", detail: "sem tokens no bling_tokens" };
+      return { map: null, reason: "bling_nao_configurado" };
     }
     if (bling.isExpired) {
       await bling.refreshTokens();
     }
 
     const produtos = await bling.listAllProducts();
-    console.warn(`[Catálogo] Bling: ${produtos.length} produto(s) listados`);
-    if (!produtos.length) {
-      return {
-        map: null,
-        reason: "bling_indisponivel",
-        detail: "listAllProducts retornou 0 produtos",
-      };
-    }
+    if (!produtos.length) return { map: null, reason: "bling_indisponivel" };
 
     const stock = await bling.getStockBalances(produtos.map((p) => p.id));
-    const positives = [...stock.values()].filter((n) => n > 0).length;
-    console.warn(
-      `[Catálogo] Bling: saldos retornados=${stock.size}, positivos=${positives}, totalProdutos=${produtos.length}`,
-    );
 
     const map = new Map<string, number>();
     for (const p of produtos) {
       const sku = (p.codigo || String(p.id)).trim();
       if (!sku) continue;
-      // Casa por SKU (string) primeiro — sabemos que bate com o banco — e por id
-      // como fallback, para não depender do tipo/conteúdo do idProduto.
-      map.set(sku, stock.get(sku) ?? stock.get(p.id) ?? 0);
-    }
-
-    // Se o endpoint de saldos devolveu vazio/zerado, não vale a pena usar este
-    // "mapa em tempo real" (resultaria em tudo fora de estoque). Reporta como
-    // indisponível para o chamador usar o saldo do banco.
-    if (map.size > 0 && positives === 0) {
-      const mod = await import("./integrations/bling.server");
-      const diag = mod.lastStockBalancesDiag;
-      const detail = [
-        `saldos zerados (${stock.size} de ${produtos.length})`,
-        diag
-          ? `rawItens=${diag.rawItens} requestedFound=${diag.requestedFound} achouProcurado=${diag.achouProcurado} procuradoTipo=${diag.procuradoTipo} procurado=${String(diag.procurado)} amostra=${JSON.stringify(diag.amostra)}`
-          : "sem diag",
-      ].join(" | ");
-      console.warn(`[Catálogo] Bling: todos os saldos vieram zerados — ${detail}`);
-      return { map: null, reason: "bling_indisponivel", detail };
+      map.set(sku, stock.get(p.id) ?? 0);
     }
 
     cache = { at: Date.now(), map };
-    await writeCacheToDb(map);
     return { map, reason: null };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[Catálogo] Estoque do Bling indisponível, usando banco:", msg);
-    // Se houver um cache anterior (mesmo velho), serve ele em vez de esvaziar a vitrine.
-    if (dbCache) {
-      cache = dbCache;
-      return { map: dbCache.map, reason: null };
-    }
-    return { map: null, reason: "bling_indisponivel", detail: msg };
+    console.warn("[Catálogo] Estoque do Bling indisponível, usando banco:", err);
+    return { map: null, reason: "bling_indisponivel" };
   }
 }
 
 export interface BlingDetail {
-  name: string | null;
-  code: string | null;
   price: number | null;
   stock: number | null;
   description: string | null;
-  descriptionLong: string | null;
-  descriptionShort: string | null;
-
   images: string[];
   brand: string | null;
   weightG: number | null;
@@ -160,14 +68,9 @@ export interface BlingDetail {
 }
 
 const EMPTY: BlingDetail = {
-  name: null,
-  code: null,
   price: null,
   stock: null,
   description: null,
-  descriptionLong: null,
-  descriptionShort: null,
-
   images: [],
   brand: null,
   weightG: null,
@@ -180,61 +83,6 @@ const EMPTY: BlingDetail = {
 function num(v: unknown): number | null {
   const n = Number(v);
   return Number.isFinite(n) && n !== 0 ? n : null;
-}
-
-/**
- * Extrai URLs de imagens de um objeto `midia` do Bling. O Bling devolve as
- * imagens em formatos diferentes conforme o endpoint/versão (internas/externas,
- * imagensURL, capasURL ou um array direto), então lê de todos.
- */
-export function extractBlingImages(midia: any): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  const pushUrl = (v: unknown) => {
-    const url = (v as any)?.link ?? (v as any)?.url ?? (typeof v === "string" ? v : null);
-    if (!url || typeof url !== "string" || !url.trim()) return;
-    const trimmed = url.trim();
-    // Normaliza a URL para não duplicar a MESMA foto em formatos/URLs
-    // diferentes (interna/externa, imagensURL/capasURL, query de tamanho).
-    const key = normalizeImageUrl(trimmed);
-    if (seen.has(key)) return;
-    seen.add(key);
-    out.push(trimmed);
-  };
-  const pushArray = (list: unknown) => {
-    if (Array.isArray(list)) for (const it of list) pushUrl(it);
-  };
-
-  const imagens = midia?.imagens;
-  if (Array.isArray(imagens)) {
-    pushArray(imagens);
-  } else {
-    pushArray(imagens?.internas);
-    pushArray(imagens?.externas);
-    pushArray(imagens?.imagensURL);
-    pushArray(imagens?.capasURL);
-    pushArray(imagens?.imagens);
-  }
-  return out;
-}
-
-/**
- * Normaliza a URL de uma imagem para deduplicação "visual": remove query string
- * e hash, normaliza http->https e trailing slash. Assim a mesma foto guardada
- * com URLs diferentes não é exibida mais de uma vez.
- */
-function normalizeImageUrl(url: string): string {
-  if (!url) return "";
-  try {
-    const u = new URL(url);
-    u.search = "";
-    u.hash = "";
-    let href = u.href;
-    if (href.endsWith("/")) href = href.slice(0, -1);
-    return href.replace(/^http:\/\//i, "https://");
-  } catch {
-    return url.split(/[?#]/)[0].replace(/\/+$/, "");
-  }
 }
 
 /**
@@ -256,11 +104,17 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
     const found = await bling.searchProduct(sku);
     if (!found) return { ...EMPTY, reason: "bling_indisponivel" };
 
-    const full =
-      (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
+    const full = (await bling.getProductById(found.id)) ?? (found as unknown as Record<string, any>);
     const stockMap = await bling.getStockBalances([found.id]);
 
-    const images = extractBlingImages(full?.midia);
+    const images: string[] = [];
+    const midia = full?.midia?.imagens;
+    for (const group of [midia?.internas, midia?.externas]) {
+      for (const img of group ?? []) {
+        const url = img?.link ?? img?.url;
+        if (url) images.push(url);
+      }
+    }
 
     const attributes: { label: string; value: string }[] = [];
     const push = (label: string, value: unknown) => {
@@ -290,17 +144,11 @@ export async function getBlingProductDetail(sku: string): Promise<BlingDetail> {
     const dim = full?.dimensoes;
 
     return {
-      name: (full?.nome ?? found?.nome ?? null) || null,
-      code: (full?.codigo ?? sku ?? null) || null,
       price: num(full?.preco),
       stock: stockMap.get(found.id) ?? null,
       description:
         (full?.descricaoComplementar || full?.descricaoCurta || full?.descricao || null) ?? null,
-      descriptionLong:
-        (full?.descricaoComplementar || full?.descricao || full?.descricaoCurta || null) ?? null,
-      descriptionShort: (full?.descricaoCurta || full?.descricao || null) ?? null,
       images,
-
       brand: full?.marca ?? null,
       weightG: num(full?.pesoBruto ? Number(full.pesoBruto) * 1000 : null),
       dimensions: dim

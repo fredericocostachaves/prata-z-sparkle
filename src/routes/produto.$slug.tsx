@@ -9,10 +9,9 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { getProductDetail } from "@/lib/catalog.functions";
 import type { CatalogDetailResult, CatalogProductDetail } from "@/lib/catalog.types";
 import { SITE_URL, productJsonLd, breadcrumbJsonLd } from "@/lib/seo";
-import { stripHtml } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import placeholderImage from "@/assets/produto-sem-imagem.svg";
+import catFallback from "@/assets/cat-colar.jpg";
 
 const EMPTY_DETAIL: CatalogDetailResult = {
   product: null,
@@ -32,11 +31,10 @@ export const Route = createFileRoute("/produto/$slug")({
     const remote = loaderData?.product ?? null;
     const local = getProductBySlug(params.slug);
     const name = remote?.name ?? local?.name ?? null;
-    const description = stripHtml(
+    const description =
       remote?.description ??
-        local?.description ??
-        "Joia em prata 925 legítima com garantia de autenticidade e atendimento personalizado.",
-    );
+      local?.description ??
+      "Joia em prata 925 legítima com garantia de autenticidade e atendimento personalizado.";
     const price = remote?.price ?? local?.price ?? null;
     const stock = remote?.stock ?? local?.stock ?? 0;
     const image = remote?.gallery?.[0] ?? remote?.image ?? local?.images?.[0] ?? null;
@@ -159,7 +157,7 @@ function ProductPage() {
 
   const product: Product | undefined = useMemo(() => {
     if (remote) {
-      const images = remote.gallery.length ? remote.gallery : [placeholderImage];
+      const images = remote.gallery.length ? remote.gallery : [catFallback];
       return {
         id: remote.id,
         slug,
@@ -167,7 +165,7 @@ function ProductPage() {
         category: (remote.category || local?.category || "colares") as Product["category"],
         price: remote.price,
         images,
-        description: stripHtml(remote.description ?? ""),
+        description: remote.description ?? "",
         highlights: local?.highlights ?? [],
         sizes: local?.sizes,
         stock: remote.stock,
@@ -179,15 +177,6 @@ function ProductPage() {
   const [size, setSize] = useState<string | undefined>(local?.sizes?.[0]);
   const stock = remote?.stock ?? product?.stock;
   const stockLoading = isPending && !local;
-
-  /** Descrição curta do Bling para a dobra "Descrição do produto" */
-  const blingDescricaoCurta = useMemo(() => {
-    const raw = remote?.descriptionShort ?? remote?.description ?? null;
-    if (!raw) return null;
-    const text = stripHtml(raw);
-    return text || null;
-  }, [remote]);
-
 
   const notice =
     isError || data?.warning === "catalogo_indisponivel"
@@ -228,8 +217,9 @@ function ProductPage() {
     navigate({ to: "/checkout" });
   };
 
-
-
+  const whatsappMsg = encodeURIComponent(
+    `Olá! Gostaria de saber mais sobre: ${product.name} (${formatPrice(product.price)})`,
+  );
 
 
   return (
@@ -314,13 +304,7 @@ function ProductPage() {
             <p className="mt-6 text-3xl font-serif text-foreground">{formatPrice(product.price)}</p>
             <p className="mt-1 text-sm text-muted-foreground">{formatInstallment(product.price)}</p>
 
-            {blingDescricaoCurta ? (
-              <p className="mt-8 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                {blingDescricaoCurta}
-              </p>
-            ) : (
-              <p className="mt-8 text-muted-foreground leading-relaxed">{product.description}</p>
-            )}
+            <p className="mt-8 text-muted-foreground leading-relaxed">{product.description}</p>
 
             {product.sizes && product.sizes.length > 0 && (
               <div className="mt-8">
@@ -380,8 +364,15 @@ function ProductPage() {
                 <Heart className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
                 {isFav ? "Favoritado" : "Favoritar"}
               </button>
+              <a
+                href={`https://wa.me/5500000000000?text=${whatsappMsg}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 border border-border hover:border-foreground py-3 text-[11px] tracking-[0.2em] uppercase transition"
+              >
+                Comprar pelo WhatsApp
+              </a>
             </div>
-
 
             <ul className="mt-10 space-y-3">
               {product.highlights.map((h) => (
@@ -460,8 +451,27 @@ function ProductPage() {
           </div>
         </article>
 
-        {/* Conteúdo editorial — alimentado pelos dados do Bling quando disponíveis */}
-        <section className="mt-24 border-t border-border pt-16">
+        {/* Editorial content blocks (placeholder until Bling integration) */}
+        <section className="mt-24 grid lg:grid-cols-3 gap-8 border-t border-border pt-16">
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Sobre a peça</p>
+            <h2 className="mt-3 text-2xl font-serif text-foreground">Detalhes que fazem a diferença</h2>
+            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+              Cada {product.name.toLowerCase()} é produzida em prata esterlina 925, com selo de
+              autenticidade gravado e acabamento à mão por nossas joalheiras parceiras. Uma peça
+              pensada para acompanhar você do dia a dia aos momentos mais especiais.
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Composição</p>
+            <h2 className="mt-3 text-2xl font-serif text-foreground">Materiais & acabamento</h2>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>• Liga: prata 925 (92,5% prata pura)</li>
+              <li>• Acabamento: polido espelhado</li>
+              <li>• Banho protetor antiescurecimento</li>
+              <li>• Hipoalergênico e nickel-free</li>
+            </ul>
+          </div>
           <div>
             <p className="text-[11px] tracking-[0.3em] uppercase text-nude-deep">Como cuidar</p>
             <h2 className="mt-3 text-2xl font-serif text-foreground">Para durar por gerações</h2>
@@ -500,8 +510,8 @@ function ProductPage() {
               cuidadosa para entregar significado, conforto e elegância atemporal.
             </p>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              Nosso compromisso é com a autenticidade — por isso oferecemos 30 dias de garantia*
-              nas peças, além de atendimento individual quando você desejar.
+              Nosso compromisso é com a autenticidade — por isso oferecemos garantia vitalícia
+              de troca de fechos e ajustes, além de atendimento individual quando você desejar.
             </p>
             <Link
               to="/sobre"
@@ -515,9 +525,9 @@ function ProductPage() {
         {/* Service highlights */}
         <section className="mt-20 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { title: "Envio para todo o Brasil", desc: "Entregas seguras com rastreio para todo o país." },
+            { title: "Envio para todo o Brasil", desc: "Frete grátis acima de R$ 299, entregas seguras com rastreio." },
             { title: "Parcele em até 4x", desc: "Sem juros no cartão de crédito ou 5% off no Pix." },
-            { title: "Garantia de 30 dias*", desc: "Cobertura contra defeitos de fabricação." },
+            { title: "Garantia vitalícia", desc: "Troca de fechos e pequenos ajustes para sempre." },
             { title: "Embalagem premium", desc: "Caixa rígida assinada e cartão para presentear." },
           ].map((item) => (
             <div key={item.title} className="border border-border p-6 rounded-sm">

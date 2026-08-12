@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import type { Product } from "@/data/products";
-import placeholderImage from "@/assets/produto-sem-imagem.svg";
 
 export interface CartItem {
   productId: string;
@@ -66,7 +65,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               slug: p.slug,
               name: p.name,
               price: p.price,
-              image: p.images[0] ?? placeholderImage,
+              image: p.images[0],
               qty,
               size,
             },

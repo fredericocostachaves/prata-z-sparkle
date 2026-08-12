@@ -104,11 +104,9 @@ function CheckoutPage() {
             comprimentoCm: 20
           }
         });
-      } catch (shippingErr: any) {
+      } catch (shippingErr) {
         console.error('Erro ao calcular frete:', shippingErr);
-        setShippingOptions([]);
-        setSelectedShipping(null);
-        toast.error(shippingErr?.message || "Não foi possível calcular o frete");
+        toast.error("Não foi possível calcular o frete");
       }
       setShippingOptions(options);
       if (options.length > 0) setSelectedShipping(options[0]);
@@ -344,13 +342,6 @@ function CheckoutPage() {
                       </label>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {data.cep.replace(/\D/g, "").length === 8 && !cepLoading && shippingOptions.length === 0 && (
-                <div className="mt-6 p-4 border border-dashed border-border text-sm text-muted-foreground">
-                  Não foi possível encontrar opções de frete para este CEP. Verifique se o CEP de origem está
-                  configurado e se o token do Super Frete é válido, depois tente novamente.
                 </div>
               )}
             </div>
