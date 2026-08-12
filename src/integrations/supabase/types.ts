@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      bling_estoque_cache: {
+        Row: {
+          atualizado_em: string
+          id: number
+          mapa: Json
+        }
+        Insert: {
+          atualizado_em?: string
+          id?: number
+          mapa: Json
+        }
+        Update: {
+          atualizado_em?: string
+          id?: number
+          mapa?: Json
+        }
+        Relationships: []
+      }
       bling_tokens: {
         Row: {
           access_token: string
