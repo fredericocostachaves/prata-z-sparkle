@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      bling_estoque_cache: {
+        Row: {
+          atualizado_em: string
+          id: number
+          mapa: Json
+        }
+        Insert: {
+          atualizado_em?: string
+          id?: number
+          mapa: Json
+        }
+        Update: {
+          atualizado_em?: string
+          id?: number
+          mapa?: Json
+        }
+        Relationships: []
+      }
       bling_tokens: {
         Row: {
           access_token: string
@@ -175,6 +193,13 @@ export type Database = {
             columns: ["produto_id"]
             isOneToOne: false
             referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_pedido_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "vw_catalogo_produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -362,7 +387,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_catalogo_produtos: {
+        Row: {
+          altura_cm: number | null
+          categoria: string | null
+          comprimento_cm: number | null
+          descricao: string | null
+          galeria_urls: string[] | null
+          id: string | null
+          imagem_url: string | null
+          largura_cm: number | null
+          nome: string | null
+          peso_g: number | null
+          preco_venda: number | null
+          sku: string | null
+        }
+        Insert: {
+          altura_cm?: number | null
+          categoria?: string | null
+          comprimento_cm?: number | null
+          descricao?: string | null
+          galeria_urls?: string[] | null
+          id?: string | null
+          imagem_url?: string | null
+          largura_cm?: number | null
+          nome?: string | null
+          peso_g?: number | null
+          preco_venda?: number | null
+          sku?: string | null
+        }
+        Update: {
+          altura_cm?: number | null
+          categoria?: string | null
+          comprimento_cm?: number | null
+          descricao?: string | null
+          galeria_urls?: string[] | null
+          id?: string | null
+          imagem_url?: string | null
+          largura_cm?: number | null
+          nome?: string | null
+          peso_g?: number | null
+          preco_venda?: number | null
+          sku?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
