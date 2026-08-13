@@ -204,6 +204,32 @@ export const getProductDetail = createServerFn({ method: "GET" })
 export const listTopSellers = createServerFn({ method: "GET" }).handler(
   async (): Promise<CatalogResult> => {
     try {
+      // 1) Fonte principal: ERP Bling (imagens, descrição, preço e estoque reais)
+      try {
+        const { getBlingTopSellers } = await import("./catalog.server");
+        const top = await getBlingTopSellers(8);
+        if (top.items.length) {
+          return {
+            products: top.items.map((p) => ({
+              id: p.id,
+              sku: p.sku,
+              name: p.name,
+              price: p.price,
+              stock: p.stock,
+              image: p.image,
+              gallery: p.gallery,
+              description: p.description,
+              category: p.category,
+            })),
+            source: "bling",
+            warning: null,
+          };
+        }
+      } catch (err) {
+        console.warn("[Catalogo] Top de vendas do Bling falhou, usando banco:", err);
+      }
+
+      // 2) Fallback: banco interno
       const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
       const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
       if (!key || !url) return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
