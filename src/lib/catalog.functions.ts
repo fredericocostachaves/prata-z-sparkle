@@ -196,3 +196,75 @@ export const getProductDetail = createServerFn({ method: "GET" })
       return { product: null, source: "fallback", warning: "catalogo_indisponivel" };
     }
   });
+
+/**
+ * Top de vendas: uma peça por categoria — a de maior estoque disponível.
+ * Usa o saldo do Bling quando a integração estiver configurada.
+ */
+export const listTopByCategory = createServerFn({ method: "GET" }).handler(
+  async (): Promise<CatalogResult> => {
+    try {
+      const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+      if (!key || !url) {
+        return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+      }
+      const supabase = createClient<Database>(url, key, {
+        auth: { persistSession: false },
+        global: {
+          fetch: (input, init) => {
+            const h = new Headers(init?.headers);
+            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
+              h.delete("Authorization");
+            }
+            h.set("apikey", key);
+            return fetch(input, { ...init, headers: h });
+          },
+        },
+      });
+
+      const { data: rows, error } = await supabase
+        .from("produtos")
+        .select("id, sku, nome, preco_venda, estoque_atual, imagem_url, galeria_urls, descricao, categoria")
+        .eq("ativo", true)
+        .gte("estoque_atual", 1);
+
+      if (error || !rows?.length) {
+        return { products: [], source: "fallback", warning: error ? "catalogo_indisponivel" : null };
+      }
+
+      const bling = await fetchBlingStock();
+
+      const all: CatalogProduct[] = rows
+        .map((r) => {
+          const live = bling.map?.get((r.sku ?? "").trim());
+          return {
+            id: r.id,
+            sku: r.sku,
+            name: r.nome,
+            price: Number(r.preco_venda) || 0,
+            stock: live ?? r.estoque_atual ?? 0,
+            image: r.imagem_url,
+            gallery: r.galeria_urls ?? [],
+            description: r.descricao,
+            category: r.categoria ?? "",
+          };
+        })
+        .filter((p) => p.stock >= 1 && (CATEGORY_SLUGS as readonly string[]).includes(p.category));
+
+      // Uma peça por categoria: a de maior estoque
+      const best = new Map<string, CatalogProduct>();
+      for (const p of all) {
+        const cur = best.get(p.category);
+        if (!cur || p.stock > cur.stock) best.set(p.category, p);
+      }
+
+      const products = CATEGORY_SLUGS.map((s) => best.get(s)).filter(Boolean) as CatalogProduct[];
+
+      return { products, source: bling.map ? "bling" : "banco", warning: bling.reason };
+    } catch (err) {
+      console.error("[Catalogo] Falha em listTopByCategory:", err);
+      return { products: [], source: "fallback", warning: "catalogo_indisponivel" };
+    }
+  },
+);
