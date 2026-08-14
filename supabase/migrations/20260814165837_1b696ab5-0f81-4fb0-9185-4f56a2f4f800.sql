@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.promote_user(uuid, app_role) FROM authenticated, anon, public;
