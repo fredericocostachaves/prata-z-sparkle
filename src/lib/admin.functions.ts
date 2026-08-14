@@ -38,14 +38,18 @@ export const promoteUser = createServerFn({ method: "POST" })
     role: z.enum(["admin", "staff", "cliente"]),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await ensureStaff(context);
-    const { error } = await context.supabase.rpc("promote_user", {
-      _user_id: data.user_id,
-      _role: data.role,
-    });
+    const { isAdmin } = await ensureStaff(context);
+    if (!isAdmin) throw new Error("Acesso negado — somente administradores podem alterar papéis.");
+    // Role grants run with the service role after the server-side admin check,
+    // so the SQL helper is not exposed to signed-in users.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("user_roles")
+      .upsert({ user_id: data.user_id, role: data.role }, { onConflict: "user_id,role" });
     if (error) throw new Error(`Erro ao promover usuário: ${error.message}`);
     return { ok: true };
   });
+
 
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
