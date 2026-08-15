@@ -60,7 +60,7 @@ class NubankClient {
     this.baseUrl = isProduction
       ? 'https://api.spinpay.com.br'
       : 'https://sandbox-api.spinpay.com.br';
-    this.siteUrl = process.env.SITE_URL || 'https://prata-z-sparkle.lovable.app';
+    this.siteUrl = process.env.SITE_URL || 'https://pratazjoias.com.br';
   }
 
   private getHeaders(): Headers {
