@@ -80,7 +80,7 @@ export function MostLoved() {
             ))}
           </div>
         ) : (
-          <Carousel opts={{ align: "start", loop: products.length > 4 }} className="relative">
+          <Carousel opts={{ align: "start", loop: true }} className="relative">
             <CarouselContent className="-ml-5 md:-ml-8">
               {products.map((p, i) => (
                 <CarouselItem key={p.id} className="pl-5 md:pl-8 basis-1/2 lg:basis-1/4">
