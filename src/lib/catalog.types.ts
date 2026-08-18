@@ -12,6 +12,22 @@ export const CATEGORY_SLUGS = [
 
 export type CatalogCategorySlug = (typeof CATEGORY_SLUGS)[number];
 
+/** Ordem das categorias no carrossel "Top de vendas" (A-Z conforme rótulos). */
+export const TOP_CATEGORY_ORDER = [
+  "cuidados", // Acessórios de cuidados
+  "aneis",
+  "berloques",
+  "braceletes",
+  "brincos",
+  "colares",
+  "piercings",
+  "pingentes",
+  "pulseiras",
+] as const;
+
+/** Estoque mínimo (exclusivo) para uma peça entrar no carrossel. */
+export const TOP_MIN_STOCK = 2;
+
 export interface CatalogProduct {
   id: string;
   sku: string;

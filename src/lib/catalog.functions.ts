@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
+import { CATEGORY_SLUGS, TOP_CATEGORY_ORDER, TOP_MIN_STOCK, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
   return { map: null, reason: null };
@@ -250,7 +250,11 @@ export const listTopByCategory = createServerFn({ method: "GET" }).handler(
             category: r.categoria ?? "",
           };
         })
-        .filter((p) => p.stock >= 1 && (CATEGORY_SLUGS as readonly string[]).includes(p.category));
+        .filter(
+          (p) =>
+            p.stock > TOP_MIN_STOCK &&
+            (TOP_CATEGORY_ORDER as readonly string[]).includes(p.category),
+        );
 
       // Uma peça por categoria: a de maior estoque
       const best = new Map<string, CatalogProduct>();
@@ -259,7 +263,8 @@ export const listTopByCategory = createServerFn({ method: "GET" }).handler(
         if (!cur || p.stock > cur.stock) best.set(p.category, p);
       }
 
-      const products = CATEGORY_SLUGS.map((s) => best.get(s)).filter(Boolean) as CatalogProduct[];
+      // Categorias sem peça acima do estoque mínimo simplesmente não aparecem
+      const products = TOP_CATEGORY_ORDER.map((s) => best.get(s)).filter(Boolean) as CatalogProduct[];
 
       return { products, source: bling.map ? "bling" : "banco", warning: bling.reason };
     } catch (err) {
