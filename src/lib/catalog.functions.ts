@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { CATEGORY_SLUGS, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
+import { CATEGORY_SLUGS, TOP_CATEGORY_ORDER, TOP_MIN_STOCK, type CatalogProduct, type CatalogResult, type CatalogProductDetail, type CatalogDetailResult, type CatalogWarning, slugifySku } from "./catalog.types";
 
 async function fetchBlingStock(): Promise<{ map: Map<string, number> | null; reason: CatalogWarning }> {
   return { map: null, reason: null };
